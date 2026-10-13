@@ -24,7 +24,8 @@ function CodeReveal({ result }: { result: Extract<CodeResult, { status: "code" }
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(`${result.studentName}\nBelépőkód: ${formatted}`);
+      // Csak a kód kerül a vágólapra: így a tanuló közvetlenül a kódmezőbe illesztheti.
+      await navigator.clipboard.writeText(formatted);
       setCopied(true);
     } catch {
       setCopied(false);
@@ -48,7 +49,7 @@ function CodeReveal({ result }: { result: Extract<CodeResult, { status: "code" }
       </p>
       <div className="flex flex-wrap items-center gap-3">
         <Button type="button" variant="secondary" onClick={copy}>
-          {copied ? "Kimásolva" : "Név és kód másolása"}
+          {copied ? "Kód kimásolva" : "Kód másolása"}
         </Button>
       </div>
       <p className="text-sm text-muted">

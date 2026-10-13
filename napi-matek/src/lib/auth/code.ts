@@ -22,8 +22,25 @@ export function isWellFormedCode(input: string): boolean {
   return code.length === CODE_LENGTH && [...code].every((c) => CODE_ALPHABET.includes(c));
 }
 
+/** Egy kódformájú részlet: 4 + 4 karakter az ábécéből, köztük opcionális kötőjel/szóköz. */
+const CODE_IN_TEXT = /[ABCDEFGHJKLMNPQRSTUVWXYZ2-9]{4}[-\s]?[ABCDEFGHJKLMNPQRSTUVWXYZ2-9]{4}/g;
+
+/**
+ * Kód kinyerése beillesztett szövegből.
+ * Ha a tanuló egy egész üzenetet illeszt be (pl. „Teszt Elek\nBelépőkód: ABCD-EFGH”),
+ * a normalizált szöveg hosszabb 8 karakternél; ilyenkor a szöveg UTOLSÓ kódformájú
+ * részletét vesszük (a név jellemzően előtte áll). Gépelésnél ez nem fut.
+ */
+export function extractCode(input: string): string {
+  const normalized = normalizeCode(input);
+  if (normalized.length <= CODE_LENGTH) return normalized;
+  const matches = input.toUpperCase().match(CODE_IN_TEXT);
+  const last = matches?.at(-1);
+  return last ? normalizeCode(last) : normalized.slice(0, CODE_LENGTH);
+}
+
 /** Megjelenítés és gépelés közbeni formázás: „ABCDEFGH” → „ABCD-EFGH”. */
 export function formatCode(input: string): string {
-  const code = normalizeCode(input).slice(0, CODE_LENGTH);
+  const code = extractCode(input).slice(0, CODE_LENGTH);
   return code.length > 4 ? `${code.slice(0, 4)}-${code.slice(4)}` : code;
 }

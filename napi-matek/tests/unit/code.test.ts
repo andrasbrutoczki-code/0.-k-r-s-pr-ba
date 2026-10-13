@@ -27,3 +27,16 @@ describe("belépőkód", () => {
     expect(isWellFormedCode("ABCD-EFGI")).toBe(false); // I nem lehet
   });
 });
+
+describe("beillesztett szöveg", () => {
+  it("egy egész üzenetből a kódot veszi ki", () => {
+    expect(formatCode("Teszt Elek\nBelépőkód: ABCD-EFGH")).toBe("ABCD-EFGH");
+    expect(formatCode("Teszt Elek\nBelépőkód: abcdefgh")).toBe("ABCD-EFGH");
+    expect(formatCode("Kód: wxyz 2345, név: Anna")).toBe("WXYZ-2345");
+  });
+
+  it("gépelés közben nem változik a viselkedés", () => {
+    expect(formatCode("ABCD-EFG")).toBe("ABCD-EFG");
+    expect(formatCode("abcd efgh")).toBe("ABCD-EFGH");
+  });
+});
