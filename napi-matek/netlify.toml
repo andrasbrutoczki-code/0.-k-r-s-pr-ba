@@ -1,6 +1,13 @@
-   [build]
-     command = "npm run build"
-     publish = ".next"
+# Netlify build-beállítások. A fájl felülírja a webes felületen megadott
+# build parancsot és publish mappát, így a beállítás a kóddal együtt verziózott.
+[build]
+  command = "npm run build"
+  publish = ".next"
 
-   [build.environment]
-     NODE_VERSION = "22"
+[build.environment]
+  NODE_VERSION = "22"
+
+# A Next.js futtatókörnyezet (szerveroldali renderelés, server actionök,
+# middleware) ezzel a pluginnel kerül Netlify-függvényekbe.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
