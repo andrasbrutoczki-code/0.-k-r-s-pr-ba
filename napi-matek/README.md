@@ -3,9 +3,10 @@
 Gyakorlófelület emelt szintű matematika érettségire: a tanár feladatokat oszt ki,
 a tanulók naponta megoldják és fotóként beadják, a tanár visszajelzést ad.
 
-**Állapot:** 1. lépés kész (belépés, szerepkörök, tanulókezelés). A következő
-lépések: feladatbank és munkalapok → tanulói felület és feltöltés → tanári
-ellenőrzés → statisztika.
+**Állapot:** az 1–2. lépés kész: belépés és tanulókezelés; feladatbank (KaTeX,
+ábra, tömeges import), munkalapok ütemezéssel, csoportos kiosztás és tanulónkénti
+módosítás. Következik: tanulói felület és fotós beadás → tanári ellenőrzés →
+statisztika.
 
 ## Technológia és döntések
 
@@ -54,14 +55,18 @@ src/
     tanulo/             tanulói felület (őr: requireStudent)
     tanar/belepes/      tanári belépés
     tanar/(panel)/      tanári felület (őr: requireTeacher)
-      tanulok/          tanulók felvétele, új kód, letiltás
+      tanulok/          tanulók felvétele, új kód, letiltás, törlés
+      feladatok/        feladatbank, szerkesztő, import
+      munkalapok/       munkalapok, ütemezés, csoportos kiosztás
+      kiosztasok/       kiosztás tanulónként, áthelyezés, csere
   components/           közös UI-elemek
   lib/
     auth/               belépési logika, őrök, kódformázás
     supabase/           kliensek (felhasználói és titkos kulcsos)
   middleware.ts         munkamenet-frissítés
 supabase/migrations/    adatbázis séma és RPC-k, időrendben
-scripts/seed.mjs        tanár + 3 tanuló létrehozása
+public/mintak/          import-mintafájlok (JSON 20 feladattal, CSV, ZIP ábrával)
+scripts/seed.mjs        tanár + 3 tanuló létrehozása (az 5 mintafeladat migrációban van)
 scripts/test-db.sh      adatbázis-tesztek sima PostgreSQL-en
 tests/sql/              RLS- és üzleti szabály tesztek
 tests/unit/             unit tesztek (vitest)
@@ -116,3 +121,23 @@ minden pushnál lefuttatja az összes ellenőrzést.
 
 A Supabase ingyenes projektje egy hét teljes inaktivitás után szünetel;
 napi használat mellett ez nem fordul elő.
+
+## Feladatok importálása
+
+A Feladatbank → **Importálás fájlból** oldalon JSON, CSV vagy ZIP (JSON/CSV +
+PNG ábrák) tölthető fel. Importálás előtt minden sor ellenőrzött előnézetet kap;
+a hibás sorok kimaradnak, a hibátlanok egy tranzakcióban kerülnek be.
+
+| Mező | Kötelező | Leírás |
+|---|---|---|
+| `cim` | igen | a feladat címe |
+| `szoveg` | igen | a feladat szövege; képlet `$…$`, kiemelt képlet `$$…$$`, dollárjel `\$` |
+| `temakor` | igen | a témakör neve vagy rövid neve (pl. `fuggvenyek` vagy `Függvények`) |
+| `nehezseg` | igen | 1–5 |
+| `kep_kell` | nem | igen/nem: csak fényképpel adható-e be (alapból igen) |
+| `abra` | nem | PNG fájlnév, csak ZIP-csomagban |
+| `megoldasi_utmutato` | nem | csak a tanár látja |
+
+JSON: `{ "feladatok": [ { "cim": …, … } ] }` vagy egyszerű tömb. CSV: fejléc a
+fenti mezőnevekkel, pontosvessző (magyar Excel) vagy vessző elválasztóval.
+Mintafájlok: `public/mintak/`.
