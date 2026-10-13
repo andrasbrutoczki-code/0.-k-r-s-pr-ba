@@ -28,7 +28,7 @@ export default async function EditTaskPage({
   const [{ data: task }, { data: solution }, { data: topics }] = await Promise.all([
     supabase
       .from("tasks")
-      .select("id, title, body_md, difficulty, requires_image, figure_path, archived_at, topic_id")
+      .select("id, title, body_md, difficulty, requires_image, figure_path, archived_at, topic_id, task_type, est_minutes")
       .eq("id", id)
       .maybeSingle<TaskListItem>(),
     supabase.from("task_solutions").select("solution_md").eq("task_id", id).maybeSingle<{ solution_md: string }>(),
@@ -75,6 +75,8 @@ export default async function EditTaskPage({
             topic_id: task.topic_id,
             difficulty: task.difficulty,
             requires_image: task.requires_image,
+            task_type: task.task_type,
+            est_minutes: task.est_minutes,
             body_md: task.body_md,
             solution_md: solution?.solution_md ?? "",
           }}

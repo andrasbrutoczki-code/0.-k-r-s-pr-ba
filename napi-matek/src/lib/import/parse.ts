@@ -1,3 +1,5 @@
+import { defaultRequiresImage, inferTaskType, parseTaskType, type TaskType } from "../task-types.ts";
+
 /**
  * Feladatok tömeges importja: JSON és CSV feldolgozása és soronkénti validálása.
  *
@@ -6,7 +8,10 @@
  * hiszünk, de ugyanazokat a szabályokat alkalmazzuk).
  *
  * Mezők (a kulcsok kis- és nagybetű-, ékezet- és elválasztó-függetlenek):
- *   cim, szoveg, temakor, nehezseg (1–5), kep_kell (alapból igen),
+ *   cim, szoveg, temakor, nehezseg (1–5),
+ *   tipus (teszt / rovid / kifejtos; ha hiányzik, a szövegből következtetjük),
+ *   ido_perc (becsült megoldási idő, 1–120; ha hiányzik, becsüljük),
+ *   kep_kell (alapból: csak kifejtősnél igen),
  *   abra (PNG fájlnév, csak ZIP-ben), megoldasi_utmutato
  * A `pontszam` mezőt elfogadjuk, de figyelmen kívül hagyjuk (nincs pontozás).
  */
@@ -25,6 +30,8 @@ export interface ImportRow {
   topic_slug: string;
   difficulty: number;
   requires_image: boolean;
+  task_type: TaskType;
+  est_minutes?: number;
   /** A ZIP-ben lévő ábrafájl neve (feltöltés előtt); a szerver már storage-útvonalat kap. */
   figure?: string;
   solution_md?: string;
@@ -50,7 +57,7 @@ export function normalizeKey(value: string): string {
   return value
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]/g, "");
 }
 
@@ -76,6 +83,14 @@ const FIELD_ALIASES: Record<string, keyof RawFields> = {
   solution: "solution",
   pontszam: "points",
   pont: "points",
+  tipus: "type",
+  feladattipus: "type",
+  type: "type",
+  idoperc: "minutes",
+  ido: "minutes",
+  perc: "minutes",
+  becsultido: "minutes",
+  minutes: "minutes",
 };
 
 interface RawFields {
@@ -87,6 +102,8 @@ interface RawFields {
   figure?: unknown;
   solution?: unknown;
   points?: unknown;
+  type?: unknown;
+  minutes?: unknown;
 }
 
 function mapFields(record: Record<string, unknown>): { fields: RawFields; unknown: string[] } {
@@ -183,7 +200,13 @@ export function validateRecord(
     errors.push(`A nehézség 1 és 5 közötti egész szám legyen (most: „${difficultyText}”).`);
   }
 
-  let requiresImage = true;
+  const typeInput = asText(fields.type);
+  const explicitType = typeInput ? parseTaskType(typeInput) : null;
+  if (typeInput && !explicitType) {
+    errors.push(`Ismeretlen feladattípus: „${typeInput}” (teszt, rovid vagy kifejtos).`);
+  }
+
+  let requiresImage: boolean | null = null;
   if (fields.requiresImage !== undefined && asText(fields.requiresImage) !== "") {
     const parsed = parseBoolean(fields.requiresImage);
     if (parsed === null) {
@@ -191,6 +214,15 @@ export function validateRecord(
     } else {
       requiresImage = parsed;
     }
+  }
+
+  const taskType = explicitType ?? inferTaskType(body, requiresImage);
+  if (requiresImage === null) requiresImage = defaultRequiresImage(taskType);
+
+  const minutesText = asText(fields.minutes);
+  const minutes = Number(minutesText.replace(",", "."));
+  if (minutesText && (!Number.isInteger(minutes) || minutes < 1 || minutes > 120)) {
+    errors.push(`A becsült idő 1 és 120 közötti egész perc legyen (most: „${minutesText}”).`);
   }
 
   const figure = asText(fields.figure);
@@ -217,6 +249,8 @@ export function validateRecord(
           topic_slug: topic.slug,
           difficulty,
           requires_image: requiresImage,
+          task_type: taskType,
+          ...(minutesText ? { est_minutes: minutes } : {}),
           ...(figure ? { figure } : {}),
           ...(solution ? { solution_md: solution } : {}),
         }

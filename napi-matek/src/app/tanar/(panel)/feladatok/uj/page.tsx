@@ -21,7 +21,16 @@ export default async function NewTaskPage() {
       <section className="sheet">
         <TaskEditor
           topics={(data ?? []) as Topic[]}
-          initial={{ title: "", topic_id: null, difficulty: 3, requires_image: true, body_md: "", solution_md: "" }}
+          initial={{
+            title: "",
+            topic_id: null,
+            difficulty: 3,
+            requires_image: true,
+            task_type: "kifejtos",
+            est_minutes: null,
+            body_md: "",
+            solution_md: "",
+          }}
           figureUrl={null}
           justSaved={false}
         />

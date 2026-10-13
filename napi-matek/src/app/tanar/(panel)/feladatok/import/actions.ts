@@ -31,6 +31,8 @@ export async function importTasksAction(rows: ImportRow[]): Promise<ImportResult
     topic_slug: string;
     difficulty: number;
     requires_image: boolean;
+    task_type: string;
+    est_minutes: number | null;
     figure_path: string | null;
     solution_md: string | null;
   }[] = [];
@@ -47,6 +49,8 @@ export async function importTasksAction(rows: ImportRow[]): Promise<ImportResult
         temakor: row.topic_slug,
         nehezseg: row.difficulty,
         kep_kell: row.requires_image,
+        tipus: row.task_type,
+        ido_perc: row.est_minutes ?? "",
         megoldasi_utmutato: row.solution_md ?? "",
       },
       index + 1,
@@ -61,6 +65,8 @@ export async function importTasksAction(rows: ImportRow[]): Promise<ImportResult
       topic_slug: checked.row.topic_slug,
       difficulty: checked.row.difficulty,
       requires_image: checked.row.requires_image,
+      task_type: checked.row.task_type,
+      est_minutes: checked.row.est_minutes ?? null,
       figure_path: figurePath || null,
       solution_md: checked.row.solution_md ?? null,
     });

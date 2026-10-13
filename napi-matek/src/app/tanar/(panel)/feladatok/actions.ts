@@ -20,6 +20,11 @@ const taskSchema = z.object({
   topic_id: z.coerce.number().int().positive("Válassz témakört."),
   difficulty: z.coerce.number().int().min(1).max(5, "A nehézség 1 és 5 közötti."),
   requires_image: z.boolean(),
+  task_type: z.enum(["teszt", "rovid", "kifejtos"], { message: "Válassz feladattípust." }),
+  est_minutes: z.union([
+    z.literal("").transform(() => null),
+    z.coerce.number().int().min(1, "A becsült idő 1–120 perc.").max(120, "A becsült idő 1–120 perc."),
+  ]),
   body_md: z.string().trim().min(1, "Írd be a feladat szövegét.").max(20000),
   solution_md: z.string().trim().max(20000),
 });
@@ -43,6 +48,8 @@ export async function saveTaskAction(_prev: SaveTaskState, formData: FormData): 
     topic_id: formData.get("topic_id"),
     difficulty: formData.get("difficulty"),
     requires_image: formData.get("requires_image") === "on",
+    task_type: formData.get("task_type"),
+    est_minutes: String(formData.get("est_minutes") ?? "").trim(),
     body_md: formData.get("body_md") ?? "",
     solution_md: formData.get("solution_md") ?? "",
   });

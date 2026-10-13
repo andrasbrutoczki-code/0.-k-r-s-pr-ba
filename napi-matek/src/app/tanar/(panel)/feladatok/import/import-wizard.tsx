@@ -13,6 +13,7 @@ import {
   type TopicRef,
 } from "@/lib/import/parse";
 import { MathText } from "@/components/math-text";
+import { TASK_TYPE_LABEL, estimateMinutes } from "@/lib/task-types";
 import { Button, Notice } from "@/components/ui";
 import { importTasksAction, type ImportResult } from "./actions";
 
@@ -188,8 +189,9 @@ export function ImportWizard({ topics, existingTitles }: { topics: TopicRef[]; e
                   </p>
                   {row.row ? (
                     <p className="text-sm text-muted">
-                      {topicName.get(row.row.topic_slug)}, nehézség {row.row.difficulty}
-                      {row.row.requires_image ? ", fényképpel" : ", pipával"}
+                      {topicName.get(row.row.topic_slug)}, {TASK_TYPE_LABEL[row.row.task_type].toLowerCase()}, nehézség{" "}
+                      {row.row.difficulty}, ~{estimateMinutes(row.row.task_type, row.row.difficulty, row.row.est_minutes)} perc
+                      {row.row.requires_image ? ", fényképpel" : ""}
                       {row.row.figure ? `, ábra: ${row.row.figure}` : ""}
                     </p>
                   ) : (

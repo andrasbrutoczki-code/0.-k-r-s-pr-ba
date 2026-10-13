@@ -51,8 +51,12 @@ export default async function ImportPage() {
           </dd>
           <dt className="font-bold">nehezseg</dt>
           <dd>1–5 (kötelező)</dd>
+          <dt className="font-bold">tipus</dt>
+          <dd>teszt, rovid vagy kifejtos; ha hiányzik: (A)/(B) válaszlehetőségnél teszt, egyébként kifejtős</dd>
+          <dt className="font-bold">ido_perc</dt>
+          <dd>becsült megoldási idő percben (1–120); ha hiányzik, típus és nehézség alapján becsüljük</dd>
           <dt className="font-bold">kep_kell</dt>
-          <dd>igen/nem: csak fényképpel adható-e be (alapból igen)</dd>
+          <dd>igen/nem: csak fényképpel adható-e be (alapból csak a kifejtős)</dd>
           <dt className="font-bold">abra</dt>
           <dd>PNG fájlnév; csak ZIP-csomagban, a JSON/CSV mellé téve</dd>
           <dt className="font-bold">megoldasi_utmutato</dt>

@@ -76,6 +76,25 @@ describe("JSON import", () => {
   });
 });
 
+describe("típus és idő az importban", () => {
+  it("teszt felismerése, alapból nem kér képet; ismeretlen típus hiba", () => {
+    const rows = parseJsonImport(
+      JSON.stringify([
+        { cim: "A", szoveg: "Melyik?\n(A) 1\n(B) 2", temakor: "algebra", nehezseg: 1 },
+        { cim: "B", szoveg: "x", temakor: "algebra", nehezseg: 2, tipus: "kifejtős", ido_perc: 15 },
+        { cim: "C", szoveg: "x", temakor: "algebra", nehezseg: 2, tipus: "esszé", ido_perc: 500 },
+      ]),
+      { topics },
+    );
+    expect(rows[0]!.row?.task_type).toBe("teszt");
+    expect(rows[0]!.row?.requires_image).toBe(false);
+    expect(rows[1]!.row?.task_type).toBe("kifejtos");
+    expect(rows[1]!.row?.requires_image).toBe(true);
+    expect(rows[1]!.row?.est_minutes).toBe(15);
+    expect(rows[2]!.errors.length).toBe(2);
+  });
+});
+
 describe("CSV import", () => {
   it("idézőjel, sortörés a mezőben, pontosvessző", () => {
     const rows = parseCsv('a;b\n"x;1";"több\nsoros ""idézet"""\n');
@@ -103,6 +122,7 @@ describe("CSV import", () => {
       topic_slug: "algebra",
       difficulty: 1,
       requires_image: false,
+      task_type: "rovid",
     });
   });
 });

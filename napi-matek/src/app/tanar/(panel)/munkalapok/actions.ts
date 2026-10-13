@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireTeacher } from "@/lib/auth/guards";
 import { describeRpcError } from "@/lib/rpc-errors";
+import type { TaskType } from "@/lib/task-types";
+import { planWeek, seededRandom, type PoolTask, type WeekPlan } from "@/lib/week-generator";
 
 const uuid = z.string().uuid();
 const titleSchema = z.string().trim().min(1, "Adj címet a munkalapnak.").max(120);
@@ -164,4 +166,98 @@ export async function assignWorksheetAction(_prev: AssignResult, formData: FormD
 
   revalidateWorksheet(worksheetId.data);
   return { status: "done", assignmentId: data, studentCount: new Set(studentIds.data).size };
+}
+
+// -----------------------------------------------------------------------------
+// Hétgenerátor
+// -----------------------------------------------------------------------------
+
+const generatorSchema = z.object({
+  worksheetId: uuid,
+  topicIds: z.array(z.number().int().positive()).min(1, "Válassz legalább egy témakört."),
+  types: z.array(z.enum(["teszt", "rovid", "kifejtos"])).min(1, "Válassz legalább egy feladattípust."),
+  difficultyMin: z.number().int().min(1).max(5),
+  difficultyMax: z.number().int().min(1).max(5),
+  minutesPerDay: z.number().int().min(5).max(120),
+  saturdayReview: z.boolean(),
+  onlyUnassigned: z.boolean(),
+  seed: z.number().int(),
+});
+
+export type GeneratorInput = z.infer<typeof generatorSchema>;
+export type PreviewResult = { ok: true; plan: WeekPlan; poolSize: number } | { ok: false; message: string };
+
+/**
+ * Javaslat egy teljes hétre. Nem ír semmit: a tanár megnézi, újrakérheti
+ * (új mag), és csak a jóváhagyás után kerül a munkalapra (applyWeekAction).
+ * Kimaradnak a munkalapon már szereplő és – ha kérik – a már kiosztott feladatok.
+ */
+export async function previewWeekAction(input: GeneratorInput): Promise<PreviewResult> {
+  const { supabase } = await requireTeacher();
+  const parsed = generatorSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Hibás beállítás." };
+  const opts = parsed.data;
+  if (opts.difficultyMin > opts.difficultyMax) {
+    return { ok: false, message: "A legkisebb nehézség nem lehet nagyobb a legnagyobbnál." };
+  }
+
+  const { data, error } = await supabase.rpc("generator_pool", {
+    p_worksheet_id: opts.worksheetId,
+    p_topic_ids: opts.topicIds,
+    p_types: opts.types,
+    p_difficulty_min: opts.difficultyMin,
+    p_difficulty_max: opts.difficultyMax,
+    p_only_unassigned: opts.onlyUnassigned,
+  });
+  if (error) return { ok: false, message: describeRpcError(error) };
+
+  const pool: PoolTask[] = (
+    (data ?? []) as {
+      id: string;
+      title: string;
+      topic_id: number;
+      difficulty: number;
+      task_type: TaskType;
+      est_minutes: number | null;
+    }[]
+  ).map((t) => ({
+    id: t.id,
+    title: t.title,
+    topicId: t.topic_id,
+    difficulty: t.difficulty,
+    type: t.task_type,
+    estMinutes: t.est_minutes,
+  }));
+
+  const plan = planWeek(pool, { ...opts, random: seededRandom(opts.seed) });
+  return { ok: true, plan, poolSize: pool.length };
+}
+
+/** A jóváhagyott javaslat felvétele a munkalapra, egy tranzakcióban. */
+export async function applyWeekAction(
+  worksheetId: string,
+  weekNo: number,
+  items: { taskId: string; dayNo: number }[],
+): Promise<ActionResult> {
+  const { supabase } = await requireTeacher();
+  const parsed = z
+    .object({
+      worksheetId: uuid,
+      weekNo: z.number().int().min(1).max(20),
+      items: z.array(z.object({ taskId: uuid, dayNo: z.number().int().min(1).max(6) })).min(1),
+    })
+    .safeParse({ worksheetId, weekNo, items });
+  if (!parsed.success) return { ok: false, message: "Hibás javaslat." };
+
+  const payload = [...parsed.data.items]
+    .sort((a, b) => a.dayNo - b.dayNo)
+    .map((i) => ({ task_id: i.taskId, week_no: parsed.data.weekNo, day_no: i.dayNo }));
+
+  const { error } = await supabase.rpc("add_worksheet_items_bulk", {
+    p_worksheet_id: parsed.data.worksheetId,
+    p_items: payload,
+  });
+  if (error) return { ok: false, message: describeRpcError(error) };
+  revalidateWorksheet(parsed.data.worksheetId);
+  return { ok: true };
 }

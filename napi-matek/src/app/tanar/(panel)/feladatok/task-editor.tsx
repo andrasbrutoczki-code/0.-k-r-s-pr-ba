@@ -5,6 +5,13 @@ import { saveTaskAction, type SaveTaskState } from "./actions";
 import { MathText } from "@/components/math-text";
 import { Button, Field, Input, Notice, Select, Textarea } from "@/components/ui";
 import type { Topic } from "@/lib/tasks";
+import {
+  TASK_TYPES,
+  TASK_TYPE_LABEL,
+  defaultRequiresImage,
+  estimateMinutes,
+  type TaskType,
+} from "@/lib/task-types";
 
 export interface TaskEditorValues {
   id?: string;
@@ -12,6 +19,8 @@ export interface TaskEditorValues {
   topic_id: number | null;
   difficulty: number;
   requires_image: boolean;
+  task_type: TaskType;
+  est_minutes: number | null;
   body_md: string;
   solution_md: string;
 }
@@ -79,6 +88,8 @@ export function TaskEditor({
   const [topicId, setTopicId] = useState(initial.topic_id ? String(initial.topic_id) : "");
   const [difficulty, setDifficulty] = useState(initial.difficulty);
   const [requiresImage, setRequiresImage] = useState(initial.requires_image);
+  const [taskType, setTaskType] = useState<TaskType>(initial.task_type);
+  const [minutes, setMinutes] = useState(initial.est_minutes ? String(initial.est_minutes) : "");
   const [body, setBody] = useState(initial.body_md);
   const [solution, setSolution] = useState(initial.solution_md);
   const [preview, setPreview] = useState<string | null>(null);
@@ -134,6 +145,31 @@ export function TaskEditor({
 
       <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
         <fieldset>
+          <legend className="mb-1.5 font-bold">Típus</legend>
+          <div className="flex gap-1">
+            {TASK_TYPES.map((type) => (
+              <label
+                key={type}
+                className="flex h-12 cursor-pointer items-center rounded-md border border-rule bg-sheet px-3 font-bold has-[:checked]:border-ink has-[:checked]:bg-ink has-[:checked]:text-white"
+              >
+                <input
+                  type="radio"
+                  name="task_type"
+                  value={type}
+                  checked={taskType === type}
+                  onChange={() => {
+                    setTaskType(type);
+                    // A típus váltása a beadás módját is beállítja (felülírható).
+                    setRequiresImage(defaultRequiresImage(type));
+                  }}
+                  className="sr-only"
+                />
+                {TASK_TYPE_LABEL[type]}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset>
           <legend className="mb-1.5 font-bold">Nehézség</legend>
           <div className="flex gap-1">
             {[1, 2, 3, 4, 5].map((n) => (
@@ -154,6 +190,20 @@ export function TaskEditor({
             ))}
           </div>
         </fieldset>
+        <label className="space-y-1.5">
+          <span className="block font-bold">Becsült idő (perc)</span>
+          <input
+            name="est_minutes"
+            type="number"
+            min={1}
+            max={120}
+            inputMode="numeric"
+            value={minutes}
+            placeholder={String(estimateMinutes(taskType, difficulty))}
+            onChange={(e) => setMinutes(e.target.value)}
+            className="block min-h-12 w-28 rounded-md border border-rule bg-sheet px-3"
+          />
+        </label>
         <label className="flex min-h-12 cursor-pointer items-center gap-3">
           <input
             type="checkbox"
@@ -163,8 +213,10 @@ export function TaskEditor({
             className="h-5 w-5 accent-[var(--color-ink)]"
           />
           <span>
-            <span className="font-bold">Kifejtős feladat</span>
-            <span className="block text-sm text-muted">Csak fényképpel adható be.</span>
+            <span className="font-bold">Fénykép kell a beadáshoz</span>
+            <span className="block text-sm text-muted">
+              {taskType === "teszt" ? "Tesztnél a tanuló szöveges indoklást ír." : "Kifejtős feladatnál alapból bekapcsolva."}
+            </span>
           </span>
         </label>
       </div>

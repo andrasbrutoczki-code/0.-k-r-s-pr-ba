@@ -1,3 +1,5 @@
+import type { TaskType } from "./task-types";
+
 /**
  * Feladatbank: közös típusok és megjelenítési segédek.
  */
@@ -17,6 +19,8 @@ export interface TaskListItem {
   figure_path: string | null;
   archived_at: string | null;
   topic_id: number;
+  task_type: TaskType;
+  est_minutes: number | null;
 }
 
 export type TaskStatus =

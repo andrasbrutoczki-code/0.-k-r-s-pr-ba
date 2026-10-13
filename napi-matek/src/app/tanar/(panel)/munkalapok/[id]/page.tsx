@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { requireTeacher } from "@/lib/auth/guards";
 import { formatDateOnly, nextMonday, todayInBudapest } from "@/lib/schedule";
 import type { Topic } from "@/lib/tasks";
+import { estimateMinutes, type TaskType } from "@/lib/task-types";
 import { Button } from "@/components/ui";
 import { deleteWorksheetAction } from "../actions";
 import {
@@ -11,6 +12,7 @@ import {
   DuplicateButtons,
   ItemsEditor,
   TaskPicker,
+  WeekGenerator,
   WorksheetMetaForm,
   type EditorItem,
   type PickerTask,
@@ -49,7 +51,12 @@ export default async function WorksheetPage({ params }: { params: Promise<{ id: 
       .select("id, position, week_no, day_no, tasks(id, title, difficulty, topic_id, archived_at)")
       .eq("worksheet_id", id)
       .order("position"),
-    supabase.from("tasks").select("id, title, difficulty, topic_id").is("archived_at", null).order("title"),
+    supabase
+      .from("tasks")
+      .select("id, title, difficulty, topic_id, task_type, est_minutes")
+      .is("archived_at", null)
+      .order("title")
+      .limit(5000),
     supabase.from("topics").select("id, slug, name").order("id"),
     supabase.from("students").select("id, display_name").is("disabled_at", null).order("display_name"),
     supabase
@@ -84,7 +91,21 @@ export default async function WorksheetPage({ params }: { params: Promise<{ id: 
     title: string;
     difficulty: number;
     topic_id: number;
-  }[]).map((t) => ({ id: t.id, title: t.title, difficulty: t.difficulty, topicId: t.topic_id }));
+    task_type: TaskType;
+    est_minutes: number | null;
+  }[]).map((t) => ({
+    id: t.id,
+    title: t.title,
+    difficulty: t.difficulty,
+    topicId: t.topic_id,
+    type: t.task_type,
+    minutes: estimateMinutes(t.task_type, t.difficulty, t.est_minutes),
+  }));
+
+  // A generátorhoz: témakörönként hány aktív feladat van.
+  const topicCounts = new Map<number, number>();
+  for (const t of pickerTasks) topicCounts.set(t.topicId, (topicCounts.get(t.topicId) ?? 0) + 1);
+  const nextWeek = items.length ? Math.min(10, Math.max(...items.map((i) => i.week_no)) + 1) : 1;
 
   const students = ((studentsRes.data ?? []) as { id: string; display_name: string }[]).map((s) => ({
     id: s.id,
@@ -151,9 +172,25 @@ export default async function WorksheetPage({ params }: { params: Promise<{ id: 
         ) : null}
       </section>
 
+      <section className="sheet space-y-4" aria-labelledby="generator-title">
+        <h2 id="generator-title" className="text-xl font-bold">
+          Hét összeállítása automatikusan
+        </h2>
+        <p className="text-sm text-muted">
+          A generátor minden hétköznapra a napi időkeretnyi feladatot javasol a kiválasztott témakörökből, nehézségi
+          sávból és típusokból; a témakörök napról napra forognak. Előbb megnézed a javaslatot, és csak a
+          jóváhagyás után kerül a munkalapra.
+        </p>
+        <WeekGenerator
+          worksheetId={worksheet.id}
+          topics={topics.map((t) => ({ id: t.id, name: t.name, count: topicCounts.get(t.id) ?? 0 }))}
+          defaultWeek={nextWeek}
+        />
+      </section>
+
       <section className="sheet space-y-4" aria-labelledby="picker-title">
         <h2 id="picker-title" className="text-xl font-bold">
-          Feladat hozzáadása a feladatbankból
+          Feladat kézi hozzáadása a feladatbankból
         </h2>
         <TaskPicker
           worksheetId={worksheet.id}
