@@ -159,30 +159,73 @@ export function DisableForm({
 
 const initialDelete: DeleteResult = { status: "idle" };
 
+/** Összehasonlításhoz: kisbetű, ékezet nélkül, egyszerű szóközökkel. */
+function normalizeName(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /**
- * Végleges törlés – csak letiltott tanulónál jelenik meg. A megerősítéshez be
- * kell írni a tanuló nevét, mert a művelet nem vonható vissza.
+ * Végleges törlés – csak letiltott tanulónál jelenik meg. Oldalba épített
+ * megerősítés (nem a böngésző prompt-ablaka, amit egyes böngészők letiltanak):
+ * a gomb csak akkor aktív, ha a beírt név egyezik (ékezettől és kis-nagybetűtől
+ * függetlenül), és mindig látszik, miért nem.
  */
 export function DeleteStudentForm({ studentId, studentName }: { studentId: string; studentName: string }) {
   const [result, formAction, pending] = useActionState(deleteStudentAction, initialDelete);
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState("");
+  const matches = normalizeName(typed) === normalizeName(studentName);
+  const inputId = `delete-confirm-${studentId}`;
+
+  if (!open) {
+    return (
+      <Button type="button" variant="danger" onClick={() => setOpen(true)}>
+        Végleges törlés
+      </Button>
+    );
+  }
 
   return (
-    <div className="space-y-3">
-      <form
-        action={formAction}
-        onSubmit={(e) => {
-          const typed = window.prompt(
-            `${studentName} végleges törlése: a neve, a belépései, a kiosztott feladatai, a feltöltött képei és az üzenetei is törlődnek. Ez nem vonható vissza.\n\nA megerősítéshez írd be a tanuló nevét:`,
-          );
-          if (typed?.trim().toLowerCase() !== studentName.trim().toLowerCase()) e.preventDefault();
-        }}
-      >
-        <input type="hidden" name="studentId" value={studentId} />
-        <Button type="submit" variant="danger" disabled={pending}>
-          {pending ? "Törlés…" : "Végleges törlés"}
-        </Button>
-      </form>
+    <form action={formAction} className="w-full space-y-3 rounded-md border-2 border-redpen/50 bg-redpen-soft p-4">
+      <input type="hidden" name="studentId" value={studentId} />
+      <p className="font-bold text-redpen">{studentName} végleges törlése</p>
+      <p className="text-sm">
+        Törlődik a neve, a belépései, a kiosztott feladatai, a feltöltött képei és az üzenetei. Ez nem vonható
+        vissza.
+      </p>
+      <Field label="A megerősítéshez írd be a tanuló nevét" htmlFor={inputId}>
+        <Input
+          id={inputId}
+          value={typed}
+          onChange={(e) => setTyped(e.target.value)}
+          autoComplete="off"
+          autoFocus
+          placeholder={studentName}
+        />
+      </Field>
+      {typed && !matches ? <p className="text-sm text-redpen">A név még nem egyezik.</p> : null}
       {result.status === "error" ? <Notice tone="error">{result.message}</Notice> : null}
-    </div>
+      <div className="flex flex-wrap gap-3">
+        <Button type="submit" variant="danger" disabled={!matches || pending}>
+          {pending ? "Törlés…" : "Végleges törlés megerősítése"}
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={pending}
+          onClick={() => {
+            setOpen(false);
+            setTyped("");
+          }}
+        >
+          Mégse
+        </Button>
+      </div>
+    </form>
   );
 }
