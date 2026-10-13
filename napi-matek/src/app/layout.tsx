@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Atkinson_Hyperlegible } from "next/font/google";
+import "katex/dist/katex.min.css";
 import "./globals.css";
 
 /*

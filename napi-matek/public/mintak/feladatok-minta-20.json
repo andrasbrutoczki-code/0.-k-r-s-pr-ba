@@ -1,0 +1,164 @@
+{
+  "feladatok": [
+    {
+      "cim": "Halmazok metszete és uniója",
+      "szoveg": "Az $A$ halmaz elemei a 30-nál kisebb pozitív páros számok, a $B$ halmaz elemei a 30-nál kisebb pozitív, 3-mal osztható számok. Hány eleme van az $A \\cap B$ és az $A \\cup B$ halmaznak?",
+      "temakor": "halmazok-logika",
+      "nehezseg": 2,
+      "kep_kell": true,
+      "megoldasi_utmutato": "$|A| = 14$, $|B| = 9$, $A \\cap B$ a 6 többszörösei: $|A \\cap B| = 4$; $|A \\cup B| = 14 + 9 - 4 = 19$."
+    },
+    {
+      "cim": "Gyökös egyenlet",
+      "szoveg": "Oldja meg a valós számok halmazán: $\\sqrt{x+7} = x - 5$.",
+      "temakor": "algebra",
+      "nehezseg": 3,
+      "kep_kell": true,
+      "megoldasi_utmutato": "Négyzetre emelés: $x^2 - 11x + 18 = 0$, $x_1 = 9$, $x_2 = 2$. Feltétel: $x \\ge 5$, így csak $x = 9$ megoldás (ellenőrzés: $\\sqrt{16} = 4$)."
+    },
+    {
+      "cim": "Exponenciális egyenlet",
+      "szoveg": "Oldja meg a valós számok halmazán: $2^{x+1} + 2^{x} = 48$.",
+      "temakor": "algebra",
+      "nehezseg": 2,
+      "kep_kell": true,
+      "megoldasi_utmutato": "$3 \\cdot 2^x = 48$, $2^x = 16$, $x = 4$."
+    },
+    {
+      "cim": "Logaritmusos egyenlet",
+      "szoveg": "Oldja meg a valós számok halmazán: $\\log_3(x-1) + \\log_3(x+1) = 1$.",
+      "temakor": "algebra",
+      "nehezseg": 3,
+      "kep_kell": true,
+      "megoldasi_utmutato": "Feltétel: $x > 1$. $\\log_3(x^2-1) = 1$, $x^2 = 4$, így $x = 2$."
+    },
+    {
+      "cim": "Másodfokú függvény",
+      "szoveg": "Adja meg az $f(x) = x^2 - 4x + 3$ függvény zérushelyeit, minimumhelyét és minimumát!",
+      "temakor": "fuggvenyek",
+      "nehezseg": 1,
+      "kep_kell": true,
+      "megoldasi_utmutato": "Zérushelyek: $1$ és $3$. $f(x) = (x-2)^2 - 1$: minimumhely $x = 2$, minimum $-1$."
+    },
+    {
+      "cim": "Abszolútértékes egyenlőtlenség",
+      "szoveg": "Mely valós $x$ számokra teljesül: $|2x - 3| \\le 5$?",
+      "temakor": "fuggvenyek",
+      "nehezseg": 2,
+      "kep_kell": true,
+      "megoldasi_utmutato": "$-5 \\le 2x - 3 \\le 5$, azaz $-1 \\le x \\le 4$."
+    },
+    {
+      "cim": "Mértani sorozat",
+      "szoveg": "Egy mértani sorozat első tagja 3, hányadosa 2. Hányadik tagja a 768? Mennyi az első 8 tag összege?",
+      "temakor": "sorozatok",
+      "nehezseg": 2,
+      "kep_kell": true,
+      "megoldasi_utmutato": "$3 \\cdot 2^{n-1} = 768 \\Rightarrow n = 9$. $S_8 = 3 \\cdot (2^8 - 1) = 765$."
+    },
+    {
+      "cim": "Kamatos kamat",
+      "szoveg": "Egy 2 000 000 Ft-os betét évi 4%-kal kamatozik, évenkénti tőkésítéssel. Mennyi lesz a betét értéke 5 év múlva (ezer forintra kerekítve)?",
+      "temakor": "sorozatok",
+      "nehezseg": 2,
+      "kep_kell": true,
+      "megoldasi_utmutato": "$2\\,000\\,000 \\cdot 1{,}04^5 \\approx 2\\,433\\,306$, azaz kb. 2 433 ezer Ft."
+    },
+    {
+      "cim": "Trigonometrikus egyenlet",
+      "szoveg": "Oldja meg a $[0;\\,2\\pi]$ intervallumon: $2\\sin^2 x - \\sin x - 1 = 0$.",
+      "temakor": "trigonometria",
+      "nehezseg": 3,
+      "kep_kell": true,
+      "megoldasi_utmutato": "$\\sin x = 1$ vagy $\\sin x = -\\frac{1}{2}$. Megoldások: $\\frac{\\pi}{2}$, $\\frac{7\\pi}{6}$, $\\frac{11\\pi}{6}$."
+    },
+    {
+      "cim": "Derékszögű háromszög magassága",
+      "szoveg": "Egy derékszögű háromszög befogói 6 cm és 8 cm hosszúak. Mekkora az átfogóhoz tartozó magasság?",
+      "temakor": "geometria",
+      "nehezseg": 1,
+      "kep_kell": true,
+      "megoldasi_utmutato": "Átfogó: 10 cm. $m = \\frac{6 \\cdot 8}{10} = 4{,}8$ cm."
+    },
+    {
+      "cim": "Szabályos hatszög területe",
+      "szoveg": "Egy szabályos hatszög oldala 4 cm. Mekkora a területe?",
+      "temakor": "geometria",
+      "nehezseg": 1,
+      "kep_kell": true,
+      "megoldasi_utmutato": "$T = 6 \\cdot \\frac{\\sqrt{3}}{4} \\cdot 4^2 = 24\\sqrt{3} \\approx 41{,}57$ cm²."
+    },
+    {
+      "cim": "Forgáskúp",
+      "szoveg": "Egy egyenes körkúp alapkörének sugara 6 cm, magassága 8 cm. Mekkora a kúp felszíne és térfogata?",
+      "temakor": "geometria",
+      "nehezseg": 3,
+      "kep_kell": true,
+      "megoldasi_utmutato": "Alkotó: $a = 10$ cm. $A = r\\pi(r + a) = 96\\pi \\approx 301{,}6$ cm², $V = \\frac{r^2\\pi m}{3} = 96\\pi \\approx 301{,}6$ cm³."
+    },
+    {
+      "cim": "Szakaszfelező merőleges",
+      "szoveg": "Írja fel az $A(1;\\,2)$ és $B(5;\\,-2)$ pontokat összekötő szakasz felezőmerőlegesének egyenletét!",
+      "temakor": "koordinatageom",
+      "nehezseg": 2,
+      "kep_kell": true,
+      "megoldasi_utmutato": "Felezőpont: $F(3;\\,0)$, normálvektor: $\\overrightarrow{AB} = (4;\\,-4)$. Egyenlet: $x - y = 3$."
+    },
+    {
+      "cim": "Pont és egyenes távolsága",
+      "szoveg": "Mekkora a $P(2;\\,3)$ pont távolsága a $3x + 4y - 8 = 0$ egyenletű egyenestől?",
+      "temakor": "koordinatageom",
+      "nehezseg": 2,
+      "kep_kell": true,
+      "megoldasi_utmutato": "$d = \\frac{|3 \\cdot 2 + 4 \\cdot 3 - 8|}{\\sqrt{3^2 + 4^2}} = \\frac{10}{5} = 2$."
+    },
+    {
+      "cim": "Ülésrend",
+      "szoveg": "Hányféleképpen ülhet le 5 ember egy padra, ha Anna és Bence egymás mellé szeretne ülni?",
+      "temakor": "kombinatorika",
+      "nehezseg": 2,
+      "kep_kell": true,
+      "megoldasi_utmutato": "Anna és Bence egy egységként: $4!$ sorrend, egymás közt 2 féle: $2 \\cdot 4! = 48$."
+    },
+    {
+      "cim": "Küldöttség választása",
+      "szoveg": "Egy 12 fős csoportból 3 fős küldöttséget választanak. Hányféleképpen tehetik meg, ha Kata mindenképp a küldöttség tagja?",
+      "temakor": "kombinatorika",
+      "nehezseg": 2,
+      "kep_kell": true,
+      "megoldasi_utmutato": "A maradék 2 tagot 11 főből választjuk: $\\binom{11}{2} = 55$."
+    },
+    {
+      "cim": "Golyóhúzás visszatevés nélkül",
+      "szoveg": "Egy urnában 4 piros és 6 kék golyó van. Visszatevés nélkül kihúzunk 2 golyót. Mennyi a valószínűsége, hogy mindkettő piros?",
+      "temakor": "valoszinuseg",
+      "nehezseg": 2,
+      "kep_kell": true,
+      "megoldasi_utmutato": "$P = \\frac{\\binom{4}{2}}{\\binom{10}{2}} = \\frac{6}{45} = \\frac{2}{15}$."
+    },
+    {
+      "cim": "Adatsor jellemzői",
+      "szoveg": "Adja meg az alábbi adatsor átlagát, mediánját és terjedelmét: 3, 7, 7, 8, 10, 13.",
+      "temakor": "valoszinuseg",
+      "nehezseg": 1,
+      "kep_kell": true,
+      "megoldasi_utmutato": "Átlag: $48 / 6 = 8$; medián: $\\frac{7 + 8}{2} = 7{,}5$; terjedelem: $13 - 3 = 10$."
+    },
+    {
+      "cim": "Határozott integrál",
+      "szoveg": "Számítsa ki: $\\displaystyle\\int_0^2 (3x^2 - 2x + 1)\\,dx$.",
+      "temakor": "analizis",
+      "nehezseg": 2,
+      "kep_kell": true,
+      "megoldasi_utmutato": "$\\left[x^3 - x^2 + x\\right]_0^2 = 8 - 4 + 2 = 6$."
+    },
+    {
+      "cim": "Törtfüggvény szélsőértékei",
+      "szoveg": "Határozza meg az $f(x) = \\dfrac{x^2}{x-1}$ ($x \\ne 1$) függvény lokális szélsőértékeit!",
+      "temakor": "analizis",
+      "nehezseg": 4,
+      "kep_kell": true,
+      "megoldasi_utmutato": "$f'(x) = \\frac{x^2 - 2x}{(x-1)^2}$, zérushelyek: $0$ és $2$. Előjelváltás alapján $x = 0$-ban lokális maximum: $f(0) = 0$; $x = 2$-ben lokális minimum: $f(2) = 4$."
+    }
+  ]
+}

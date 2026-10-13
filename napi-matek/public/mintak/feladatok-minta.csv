@@ -1,0 +1,4 @@
+cim;szoveg;temakor;nehezseg;kep_kell;abra;megoldasi_utmutato
+Halmazok metszete és uniója;Az $A$ halmaz elemei a 30-nál kisebb pozitív páros számok, a $B$ halmaz elemei a 30-nál kisebb pozitív, 3-mal osztható számok. Hány eleme van az $A \cap B$ és az $A \cup B$ halmaznak?;halmazok-logika;2;igen;;"$|A| = 14$, $|B| = 9$, $A \cap B$ a 6 többszörösei: $|A \cap B| = 4$; $|A \cup B| = 14 + 9 - 4 = 19$."
+Gyökös egyenlet;Oldja meg a valós számok halmazán: $\sqrt{x+7} = x - 5$.;algebra;3;igen;;Négyzetre emelés: $x^2 - 11x + 18 = 0$, $x_1 = 9$, $x_2 = 2$. Feltétel: $x \ge 5$, így csak $x = 9$ megoldás (ellenőrzés: $\sqrt{16} = 4$).
+Exponenciális egyenlet;Oldja meg a valós számok halmazán: $2^{x+1} + 2^{x} = 48$.;algebra;2;igen;;$3 \cdot 2^x = 48$, $2^x = 16$, $x = 4$.

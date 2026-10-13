@@ -19,9 +19,9 @@ const nextConfig: NextConfig = {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
   experimental: {
-    // A fotók a 3. lépésben közvetlenül a Storage-ba mennek, nem server actionön át;
-    // a server actionök csak kis űrlapadatot kapnak.
-    serverActions: { bodySizeLimit: "1mb" },
+    // A feladat-ábrák (PNG, max. 5 MB) server actionön át mennek fel; a tanulói
+    // fotók (3. lépés) közvetlenül a Storage-ba, nem az actionön keresztül.
+    serverActions: { bodySizeLimit: "6mb" },
   },
 };
 

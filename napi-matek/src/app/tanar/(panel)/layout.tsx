@@ -6,7 +6,11 @@ import { requireTeacher } from "@/lib/auth/guards";
  * kívül esik ezen a layouton, így ott nincs őr (különben végtelen átirányítás).
  * A menü a lépések előrehaladtával bővül (feladatbank, munkalapok, áttekintő).
  */
-const nav = [{ href: "/tanar/tanulok", label: "Tanulók" }];
+const nav = [
+  { href: "/tanar/tanulok", label: "Tanulók" },
+  { href: "/tanar/feladatok", label: "Feladatbank" },
+  { href: "/tanar/munkalapok", label: "Munkalapok" },
+];
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
   await requireTeacher();
@@ -18,7 +22,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
           <Link href="/tanar" className="text-lg font-bold text-redpen">
             Napi matek – tanár
           </Link>
-          <nav aria-label="Tanári menü" className="flex gap-4">
+          <nav aria-label="Tanári menü" className="flex flex-wrap gap-x-5">
             {nav.map((item) => (
               <Link
                 key={item.href}

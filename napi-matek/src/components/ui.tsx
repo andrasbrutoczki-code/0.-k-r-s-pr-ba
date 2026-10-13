@@ -3,6 +3,7 @@
  * néhány elemre van szükség, és így a stílus egy helyen, átláthatóan él.
  * Érintésre méretezve: minden interaktív elem legalább 48 px magas.
  */
+import type React from "react";
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from "react";
 
 type ButtonVariant = "primary" | "secondary" | "danger" | "quiet";
@@ -77,5 +78,46 @@ export function Notice({ tone = "info", children }: { tone?: NoticeTone; childre
     >
       {children}
     </div>
+  );
+}
+
+/** Nehézség 1–5, pontokkal; a képernyőolvasó számként olvassa fel. */
+export function Difficulty({ value }: { value: number }) {
+  return (
+    <span className="inline-flex items-center gap-0.5" aria-label={`Nehézség: ${value}/5`} title={`Nehézség: ${value}/5`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span
+          key={n}
+          aria-hidden="true"
+          className={`inline-block h-2 w-2 rounded-full ${n <= value ? "bg-ink" : "bg-rule"}`}
+        />
+      ))}
+    </span>
+  );
+}
+
+/** Natív legördülő a többi mezővel egyező megjelenéssel. */
+export function Select({
+  className = "",
+  ...props
+}: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select
+      className={`block min-h-12 w-full rounded-md border border-rule bg-sheet px-3 text-graphite focus:border-ink ${className}`}
+      {...props}
+    />
+  );
+}
+
+/** Többsoros szövegmező (feladatszöveg, útmutató). */
+export function Textarea({
+  className = "",
+  ...props
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      className={`block w-full rounded-md border border-rule bg-sheet px-3 py-2 font-mono text-[0.95rem] leading-relaxed text-graphite focus:border-ink ${className}`}
+      {...props}
+    />
   );
 }
