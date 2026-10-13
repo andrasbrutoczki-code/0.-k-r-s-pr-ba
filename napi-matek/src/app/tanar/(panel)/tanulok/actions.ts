@@ -117,3 +117,75 @@ export async function setDisabledAction(formData: FormData): Promise<void> {
   });
   revalidatePath("/tanar/tanulok");
 }
+
+export type DeleteResult = { status: "idle" } | { status: "error"; message: string };
+
+type AdminClient = ReturnType<typeof createAdminClient>;
+
+/**
+ * A tanuló összes feltöltött fájljának törlése a `submissions` bucketből.
+ * Mappaszerkezet: {student_id}/{student_task_id}/{fájl}. A Storage nem töröl
+ * mappát rekurzívan, ezért előbb kilistázzuk a fájlokat.
+ */
+async function removeStudentFiles(admin: AdminClient, studentId: string): Promise<boolean> {
+  const bucket = admin.storage.from("submissions");
+  const { data: folders, error } = await bucket.list(studentId, { limit: 1000 });
+  if (error) return false;
+
+  const paths: string[] = [];
+  for (const entry of folders ?? []) {
+    // Mappa: nincs id-ja. Fájl a tanuló gyökerében elvileg nincs, de azt is kezeljük.
+    if (entry.id) {
+      paths.push(`${studentId}/${entry.name}`);
+      continue;
+    }
+    const { data: files, error: listError } = await bucket.list(`${studentId}/${entry.name}`, {
+      limit: 1000,
+    });
+    if (listError) return false;
+    for (const file of files ?? []) paths.push(`${studentId}/${entry.name}/${file.name}`);
+  }
+
+  if (paths.length === 0) return true;
+  const { error: removeError } = await bucket.remove(paths);
+  return !removeError;
+}
+
+/**
+ * Letiltott tanuló végleges törlése (GDPR: törléshez való jog).
+ * Sorrend: fájlok → adatbázis (kaszkád) → Auth felhasználó. Ha egy lépés
+ * elbukik, megállunk; a művelet újra futtatható, mert minden lépés idempotens.
+ */
+export async function deleteStudentAction(
+  _prev: DeleteResult,
+  formData: FormData,
+): Promise<DeleteResult> {
+  const { supabase } = await requireTeacher();
+
+  const id = idSchema.safeParse(formData.get("studentId"));
+  if (!id.success) return { status: "error", message: describeDbError("P0002") };
+
+  const { data: student } = await supabase
+    .from("students")
+    .select("disabled_at")
+    .eq("id", id.data)
+    .maybeSingle<{ disabled_at: string | null }>();
+  if (!student) return { status: "error", message: describeDbError("P0002") };
+  if (!student.disabled_at) {
+    return { status: "error", message: "Törlés előtt tiltsd le a tanulót." };
+  }
+
+  const admin = createAdminClient();
+  if (!(await removeStudentFiles(admin, id.data))) {
+    return { status: "error", message: "A tanuló fájljainak törlése nem sikerült. Próbáld újra." };
+  }
+
+  const { error } = await supabase.rpc("delete_student", { p_student_id: id.data });
+  if (error) return { status: "error", message: describeDbError(error.code) };
+
+  // Az adatbázisban már nincs nyoma; az Auth felhasználó törlése zárja a folyamatot.
+  await admin.auth.admin.deleteUser(id.data);
+
+  revalidatePath("/tanar/tanulok");
+  return { status: "idle" };
+}

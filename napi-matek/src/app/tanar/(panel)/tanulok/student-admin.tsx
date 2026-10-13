@@ -3,9 +3,11 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import {
   createStudentAction,
+  deleteStudentAction,
   regenerateCodeAction,
   setDisabledAction,
   type CodeResult,
+  type DeleteResult,
 } from "./actions";
 import { formatCode } from "@/lib/auth/code";
 import { Button, Field, Input, Notice } from "@/components/ui";
@@ -152,5 +154,35 @@ export function DisableForm({
         {disabled ? "Engedélyezés" : "Letiltás"}
       </Button>
     </form>
+  );
+}
+
+const initialDelete: DeleteResult = { status: "idle" };
+
+/**
+ * Végleges törlés – csak letiltott tanulónál jelenik meg. A megerősítéshez be
+ * kell írni a tanuló nevét, mert a művelet nem vonható vissza.
+ */
+export function DeleteStudentForm({ studentId, studentName }: { studentId: string; studentName: string }) {
+  const [result, formAction, pending] = useActionState(deleteStudentAction, initialDelete);
+
+  return (
+    <div className="space-y-3">
+      <form
+        action={formAction}
+        onSubmit={(e) => {
+          const typed = window.prompt(
+            `${studentName} végleges törlése: a neve, a belépései, a kiosztott feladatai, a feltöltött képei és az üzenetei is törlődnek. Ez nem vonható vissza.\n\nA megerősítéshez írd be a tanuló nevét:`,
+          );
+          if (typed?.trim().toLowerCase() !== studentName.trim().toLowerCase()) e.preventDefault();
+        }}
+      >
+        <input type="hidden" name="studentId" value={studentId} />
+        <Button type="submit" variant="danger" disabled={pending}>
+          {pending ? "Törlés…" : "Végleges törlés"}
+        </Button>
+      </form>
+      {result.status === "error" ? <Notice tone="error">{result.message}</Notice> : null}
+    </div>
   );
 }

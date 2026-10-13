@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { requireTeacher } from "@/lib/auth/guards";
 import { daysUntil, formatDate } from "@/lib/dates";
 import { Notice } from "@/components/ui";
-import { CreateStudentForm, DisableForm, RegenerateCodeForm } from "./student-admin";
+import { CreateStudentForm, DeleteStudentForm, DisableForm, RegenerateCodeForm } from "./student-admin";
 
 export const metadata: Metadata = { title: "Tanulók" };
 
@@ -16,7 +16,9 @@ interface StudentRow {
 
 /** Egy tanuló belépési állapota a tanár számára, egy mondatban. */
 function describeAccess(student: StudentRow, now: Date): { text: string; warn: boolean } {
-  if (student.disabled_at) return { text: "Letiltva", warn: true };
+  if (student.disabled_at) {
+    return { text: "Letiltva: nem tud belépni. Visszaengedélyezheted vagy véglegesen törölheted.", warn: true };
+  }
 
   const active = student.student_sessions
     .filter((s) => !s.revoked_at && new Date(s.expires_at) > now)
@@ -83,6 +85,9 @@ export default async function StudentsPage() {
                     studentName={student.display_name}
                     disabled={Boolean(student.disabled_at)}
                   />
+                  {student.disabled_at ? (
+                    <DeleteStudentForm studentId={student.id} studentName={student.display_name} />
+                  ) : null}
                 </div>
               </li>
             );

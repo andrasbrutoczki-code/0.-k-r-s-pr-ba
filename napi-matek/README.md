@@ -38,6 +38,8 @@ ellenőrzés → statisztika.
 
 - A tanulóról csak egy név/becenév tárolódik; e-mail, születési dátum nincs.
 - A kód csak hash-ként van tárolva; a tanár egyszer, létrehozáskor látja.
+- Törléshez való jog: letiltott tanuló véglegesen törölhető; ezzel a neve,
+  belépései, feladatai, feltöltött képei és üzenetei is törlődnek.
 - A betűtípus buildkor letöltődik és saját domainről megy ki: a böngésző nem
   kapcsolódik a Google-höz.
 - A képek (3. lépés) privát tárolóban lesznek, csak lejáró, aláírt URL-lel.
