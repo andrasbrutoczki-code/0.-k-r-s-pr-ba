@@ -1,0 +1,116 @@
+# Napi matek
+
+Gyakorlófelület emelt szintű matematika érettségire: a tanár feladatokat oszt ki,
+a tanulók naponta megoldják és fotóként beadják, a tanár visszajelzést ad.
+
+**Állapot:** 1. lépés kész (belépés, szerepkörök, tanulókezelés). A következő
+lépések: feladatbank és munkalapok → tanulói felület és feltöltés → tanári
+ellenőrzés → statisztika.
+
+## Technológia és döntések
+
+| Réteg | Választás | Miért |
+|---|---|---|
+| App | Next.js 15 (App Router, TypeScript, Server Actions) | UI és szerveroldali logika egy kódbázisban; a titkos kulcs nem kerül a böngészőbe. |
+| Adat, Auth, fájlok | Supabase (Postgres + RLS, Auth, Storage) | A jogosultság az adatbázisban dől el: egy hibás lekérdezés sem ad ki idegen adatot. |
+| Stílus | Tailwind CSS 4, saját kis komponensek | Kevés függőség, egy helyen élő design tokenek (`src/app/globals.css`). |
+| Validáció | zod | Ugyanaz a séma ellenőrzi az űrlapokat és (később) az importot. |
+| Hoszting | Netlify (ingyenes) + Supabase (ingyenes) | A Vercel ingyenes csomagja nem engedi a kereskedelmi használatot. |
+
+### Belépés és jogosultságok
+
+- **Tanár:** e-mail + jelszó (Supabase Auth).
+- **Tanuló:** név + 8 karakteres kód. Minden tanulóhoz tartozik egy szintetikus,
+  e-mailt nem kapó Auth felhasználó (`s-<uuid>@students.invalid`), jelszó nélkül.
+  A szerver ellenőrzi a kódot (bcrypt), majd az admin API egyszer használható
+  tokenjével munkamenetet hoz létre. E-mail nem megy ki.
+- **Munkamenet:** eszközönként 365 nap. Az utolsó 7 napban a tanuló a kód
+  újbóli megadásával meghosszabbíthatja; ha nem teszi, lejáratkor kilép.
+- **Visszavonás:** új kód generálásakor vagy letiltáskor a tanuló minden
+  eszközről azonnal kilép (kódverzió + munkamenet-nyilvántartás + Auth
+  munkamenetek törlése).
+- **Brute force:** IP-nként 10, névenként 5 próbálkozás 15 percenként.
+- **Védelmi rétegek:** a middleware csak a tokent frissíti; a jogosultságot a
+  layoutok/actionök őrei (`requireTeacher`, `requireStudent`) és végső soron az
+  adatbázis RLS-e (`current_student_id()`) ellenőrzi.
+
+### Adatvédelem (GDPR)
+
+- A tanulóról csak egy név/becenév tárolódik; e-mail, születési dátum nincs.
+- A kód csak hash-ként van tárolva; a tanár egyszer, létrehozáskor látja.
+- A betűtípus buildkor letöltődik és saját domainről megy ki: a böngésző nem
+  kapcsolódik a Google-höz.
+- A képek (3. lépés) privát tárolóban lesznek, csak lejáró, aláírt URL-lel.
+
+## Projektstruktúra
+
+```
+src/
+  app/
+    belepes/            tanulói belépés (név + kód)
+    kilepes/            kilépés (Route Handler)
+    tanulo/             tanulói felület (őr: requireStudent)
+    tanar/belepes/      tanári belépés
+    tanar/(panel)/      tanári felület (őr: requireTeacher)
+      tanulok/          tanulók felvétele, új kód, letiltás
+  components/           közös UI-elemek
+  lib/
+    auth/               belépési logika, őrök, kódformázás
+    supabase/           kliensek (felhasználói és titkos kulcsos)
+  middleware.ts         munkamenet-frissítés
+supabase/migrations/    adatbázis séma és RPC-k, időrendben
+scripts/seed.mjs        tanár + 3 tanuló létrehozása
+scripts/test-db.sh      adatbázis-tesztek sima PostgreSQL-en
+tests/sql/              RLS- és üzleti szabály tesztek
+tests/unit/             unit tesztek (vitest)
+```
+
+## Telepítés
+
+### 1. Supabase projekt
+
+1. Hozz létre egy ingyenes projektet a [supabase.com](https://supabase.com)-on.
+   Régió: **Central EU (Frankfurt)**, hogy az adatok az EU-ban maradjanak.
+2. **SQL Editor:** futtasd le a `supabase/migrations/` fájljait **név szerinti
+   sorrendben** (mindegyiket egyszer).
+   Supabase CLI-vel ugyanez: `supabase link --project-ref <ref>` majd `supabase db push`.
+3. **Authentication → Sign In / Providers:** kapcsold ki az „Allow new users to
+   sign up” opciót. Fiókot csak a tanári felület (és a seed) hozhat létre.
+4. **Project Settings → API Keys:** innen kell a projekt URL, a publishable és
+   a secret kulcs.
+
+### 2. Helyi futtatás
+
+Node.js 20.9 vagy újabb kell.
+
+```bash
+npm install
+cp .env.example .env.local     # töltsd ki
+npm run seed                   # tanár + 3 tanuló; kiírja a tanulók kódját
+npm run dev                    # http://localhost:3000
+```
+
+### 3. Tesztek
+
+```bash
+npm run typecheck
+npm test                       # unit tesztek
+npm run test:db                # RLS-tesztek; kell egy helyi PostgreSQL 15+
+```
+
+A `test:db` a szokásos `PGHOST`, `PGUSER`, `PGPASSWORD` változókkal csatlakozik,
+és egy ideiglenes `napi_matek_test` adatbázist használ. A GitHub Actions (CI)
+minden pushnál lefuttatja az összes ellenőrzést.
+
+### 4. Élesítés Netlify-on
+
+1. A Netlify-on: **Add new site → Import an existing project**, válaszd ki a
+   GitHub-repót. A Next.js-t automatikusan felismeri.
+2. **Site configuration → Environment variables:** add meg a három
+   `SUPABASE` változót a `.env.example` alapján. A `SUPABASE_SECRET_KEY`
+   legyen „secret” jelölésű.
+3. Deploy. Ezután a Supabase-ben (**Authentication → URL Configuration**)
+   állítsd a Site URL-t a Netlify-címre.
+
+A Supabase ingyenes projektje egy hét teljes inaktivitás után szünetel;
+napi használat mellett ez nem fordul elő.

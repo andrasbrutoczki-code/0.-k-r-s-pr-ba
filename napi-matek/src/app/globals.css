@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+/*
+ * Vizuális irány: a négyzetrácsos matekfüzet.
+ *  - papír + halvány rács a háttér (a kockás füzet, amiben a diák megoldja a feladatot),
+ *  - kék „töltőtoll” tinta a fő műveletekhez (a diák írása),
+ *  - piros „tanári toll” a javítandóhoz és a tanári jelzésekhez,
+ *  - zöld az elfogadotthoz.
+ * A színek jelentést hordoznak, nem díszítenek.
+ */
+@theme {
+  --color-paper: #fbfcfe;
+  --color-grid: #e4eaf3;
+  --color-sheet: #ffffff;
+  --color-ink: #1d3b8f;
+  --color-ink-soft: #e8edf9;
+  --color-graphite: #2f3542;
+  --color-muted: #5c6475;
+  --color-rule: #d5dce8;
+  --color-redpen: #c2362b;
+  --color-redpen-soft: #fbeceb;
+  --color-margin: #e8a39c;
+  --color-ok: #2f7a4b;
+  --color-ok-soft: #e6f3eb;
+
+  --font-sans: var(--font-atkinson), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sheet: 6px;
+}
+
+@layer base {
+  html {
+    color: var(--color-graphite);
+    background-color: var(--color-paper);
+    /* 24 px-es füzetrács; a 2. réteg minden 5. vonalat kicsit erősebbre rajzol. */
+    background-image:
+      linear-gradient(to right, var(--color-grid) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--color-grid) 1px, transparent 1px);
+    background-size: 24px 24px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.55;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Egy füzetlap: fehér lap, bal oldalon a piros margóvonal. */
+  .sheet {
+    position: relative;
+    background: var(--color-sheet);
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-sheet);
+    padding: 1.5rem 1.25rem 1.5rem 2.25rem;
+  }
+  .sheet::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    left: 1.25rem;
+    border-left: 2px solid var(--color-margin);
+  }
+
+  /* A belépőkód: nagy, széles betűközű, hogy diktálni és begépelni is könnyű legyen. */
+  .login-code {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    font-variant-numeric: tabular-nums;
+  }
+}
