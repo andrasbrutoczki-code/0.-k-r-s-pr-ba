@@ -27,7 +27,7 @@ import {
  * A `pontszam` mezőt elfogadjuk, de figyelmen kívül hagyjuk (nincs pontozás).
  */
 
-export const MAX_IMPORT_ROWS = 500;
+export const MAX_IMPORT_ROWS = 1000;
 
 export interface TopicRef {
   slug: string;

@@ -40,6 +40,25 @@ interface AssignmentRow {
   student_tasks: { students: { display_name: string } | null }[];
 }
 
+/**
+ * Az összes aktív feladat a feladatválasztóhoz. A PostgREST kérésenként
+ * legfeljebb 1000 sort ad, ezért ezres lapokban olvassuk.
+ */
+async function loadPickerTasks(supabase: Awaited<ReturnType<typeof requireTeacher>>["supabase"]) {
+  const rows: unknown[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data } = await supabase
+      .from("tasks")
+      .select("id, title, difficulty, task_type, est_minutes, task_topics(topic_id)")
+      .is("archived_at", null)
+      .order("title")
+      .order("id")
+      .range(from, from + 999);
+    rows.push(...(data ?? []));
+    if ((data ?? []).length < 1000 || from >= 20000) return { data: rows };
+  }
+}
+
 export default async function WorksheetPage({
   params,
   searchParams,
@@ -66,12 +85,7 @@ export default async function WorksheetPage({
       .select("id, position, week_no, day_no, tasks(id, title, difficulty, archived_at, task_topics(topic_id))")
       .eq("worksheet_id", id)
       .order("position"),
-    supabase
-      .from("tasks")
-      .select("id, title, difficulty, task_type, est_minutes, task_topics(topic_id)")
-      .is("archived_at", null)
-      .order("title")
-      .limit(5000),
+    loadPickerTasks(supabase),
     loadTopics(supabase),
     supabase.from("students").select("id, display_name").is("disabled_at", null).order("display_name"),
     supabase

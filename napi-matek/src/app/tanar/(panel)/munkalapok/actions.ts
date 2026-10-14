@@ -230,6 +230,9 @@ export async function previewWeekAction(input: GeneratorInput): Promise<PreviewR
     estMinutes: t.est_minutes,
   }));
 
+  // Az adatbázis véletlen sorrendben adja a jelölteket; azonosító szerint rendezve
+  // ugyanaz a „mag” ugyanabból a halmazból ugyanazt a javaslatot adja.
+  pool.sort((x, y) => x.id.localeCompare(y.id));
   const plan = planWeek(pool, { ...opts, random: seededRandom(opts.seed) });
   return { ok: true, plan, poolSize: pool.length };
 }

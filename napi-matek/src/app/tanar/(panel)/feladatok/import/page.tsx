@@ -13,11 +13,25 @@ const SAMPLES = [
   { href: "/mintak/feladatok-minta-abraval.zip", label: "ZIP minta ábrával" },
 ];
 
+/**
+ * Az összes meglévő feladatcím (az ismétlődő címek jelzéséhez). A PostgREST
+ * kérésenként legfeljebb 1000 sort ad, ezért lapozva olvassuk.
+ */
+async function loadAllTitles(supabase: Awaited<ReturnType<typeof requireTeacher>>["supabase"]): Promise<string[]> {
+  const titles: string[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data } = await supabase.from("tasks").select("title").order("id").range(from, from + 999);
+    const rows = (data ?? []) as { title: string }[];
+    titles.push(...rows.map((r) => r.title));
+    if (rows.length < 1000 || from >= 20000) return titles;
+  }
+}
+
 export default async function ImportPage() {
   const { supabase } = await requireTeacher();
-  const [topicList, { data: titles }] = await Promise.all([
+  const [topicList, titles] = await Promise.all([
     loadTopics(supabase),
-    supabase.from("tasks").select("title"),
+    loadAllTitles(supabase),
   ]);
 
   return (
@@ -85,7 +99,7 @@ export default async function ImportPage() {
       <section className="sheet">
         <ImportWizard
           topics={topicList}
-          existingTitles={((titles ?? []) as { title: string }[]).map((t) => normalizeKey(t.title))}
+          existingTitles={titles.map(normalizeKey)}
         />
       </section>
     </main>
