@@ -5,6 +5,7 @@ import { requireTeacher } from "@/lib/auth/guards";
 import { formatDateOnly, formatDayWithWeekday } from "@/lib/schedule";
 import { TEACHER_STATUS_LABEL, type TaskStatus } from "@/lib/tasks";
 import { StudentTaskEdit } from "./student-task-edit";
+import { AddStudentsForm, MoveAssignmentForm, RemoveTaskButton, RevokeForm } from "./assignment-tools";
 
 export const metadata: Metadata = { title: "Kiosztás" };
 
@@ -44,6 +45,11 @@ export default async function AssignmentPage({ params }: { params: Promise<{ id:
       .order("position"),
     supabase.from("tasks").select("id, title").is("archived_at", null).order("title"),
   ]);
+  const { data: studentData } = await supabase
+    .from("students")
+    .select("id, display_name")
+    .is("disabled_at", null)
+    .order("display_name");
 
   const assignment = assignmentRes.data as unknown as {
     id: string;
@@ -57,13 +63,20 @@ export default async function AssignmentPage({ params }: { params: Promise<{ id:
   const tasks = (tasksRes.data ?? []) as { id: string; title: string }[];
 
   // Tanulónként csoportosítva, név szerint rendezve.
-  const byStudent = new Map<string, { name: string; rows: StudentTaskRow[] }>();
+  const byStudent = new Map<string, { id: string; name: string; rows: StudentTaskRow[] }>();
   for (const row of rows) {
-    const entry = byStudent.get(row.student_id) ?? { name: row.students?.display_name ?? "?", rows: [] };
+    const entry = byStudent.get(row.student_id) ?? {
+      id: row.student_id,
+      name: row.students?.display_name ?? "?",
+      rows: [],
+    };
     entry.rows.push(row);
     byStudent.set(row.student_id, entry);
   }
   const groups = [...byStudent.values()].sort((a, b) => a.name.localeCompare(b.name, "hu"));
+  const missingStudents = ((studentData ?? []) as { id: string; display_name: string }[])
+    .filter((s) => !byStudent.has(s.id))
+    .map((s) => ({ id: s.id, name: s.display_name }));
 
   return (
     <main className="space-y-8">
@@ -80,9 +93,33 @@ export default async function AssignmentPage({ params }: { params: Promise<{ id:
         </p>
       </header>
 
+      <section className="sheet space-y-6" aria-labelledby="fix-title">
+        <h2 id="fix-title" className="text-xl font-bold">
+          Kiosztás javítása
+        </h2>
+        <MoveAssignmentForm assignmentId={assignment.id} startDate={assignment.start_date} />
+        <AddStudentsForm assignmentId={assignment.id} students={missingStudents} />
+        <div className="space-y-2 border-t border-rule pt-4">
+          <p className="font-bold">Visszavonás</p>
+          <RevokeForm
+            assignmentId={assignment.id}
+            worksheetId={assignment.worksheet_id}
+            label="Teljes kiosztás visszavonása"
+          />
+        </div>
+      </section>
+
       {groups.map((group) => (
-        <section key={group.name} className="sheet space-y-3" aria-label={group.name}>
-          <h2 className="text-xl font-bold">{group.name}</h2>
+        <section key={group.id} className="sheet space-y-3" aria-label={group.name}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <h2 className="text-xl font-bold">{group.name}</h2>
+            <RevokeForm
+              assignmentId={assignment.id}
+              worksheetId={assignment.worksheet_id}
+              studentId={group.id}
+              label="Visszavonás csak ennél a tanulónál"
+            />
+          </div>
           <ul className="divide-y divide-rule">
             {group.rows.map((row) => (
               <li key={row.id} className="grid gap-2 py-3 md:grid-cols-[12rem_1fr_11rem] md:items-start">
@@ -103,6 +140,9 @@ export default async function AssignmentPage({ params }: { params: Promise<{ id:
                       canSwap={row.status === "not_started"}
                       tasks={tasks}
                     />
+                  ) : null}
+                  {row.status === "not_started" ? (
+                    <RemoveTaskButton assignmentId={assignment.id} studentTaskId={row.id} />
                   ) : null}
                 </div>
                 <p className={`text-sm font-bold ${row.status === "submitted" ? "text-redpen" : "text-muted"}`}>
