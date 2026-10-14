@@ -19,6 +19,7 @@ import { Button, Difficulty, Field, Input, Notice, Select, Textarea } from "@/co
 import { PRACTICE_DAYS, formatDayWithWeekday, isoWeekday, scheduledDate } from "@/lib/schedule";
 import { TASK_TYPES, TASK_TYPE_LABEL, type TaskType } from "@/lib/task-types";
 import type { WeekPlan } from "@/lib/week-generator";
+import { TaskPreview } from "./task-preview";
 
 export interface EditorItem {
   id: string;
@@ -122,6 +123,7 @@ export function ItemsEditor({ worksheetId, items }: { worksheetId: string; items
                 {item.task.topicName} <Difficulty value={item.task.difficulty} />
               </span>
             </div>
+            <TaskPreview taskId={item.task.id} />
             <div className="mt-2 flex flex-wrap items-end gap-2">
               <label className="text-sm">
                 <span className="block font-bold">Hét</span>
@@ -278,7 +280,8 @@ export function TaskPicker({
       {filtered.length === 0 ? <p className="text-muted">Nincs a keresésnek megfelelő feladat.</p> : null}
       <ul className="max-h-[28rem] space-y-1 overflow-y-auto pr-1">
         {visible.map((task) => (
-          <li key={task.id} className="flex items-center justify-between gap-3 rounded-md border border-rule bg-sheet px-3 py-1">
+          <li key={task.id} className="rounded-md border border-rule bg-sheet px-3 py-1">
+            <div className="flex items-center justify-between gap-3">
             <span>
               <span className="font-bold">{task.title}</span>
               <span className="ml-2 text-sm text-muted">
@@ -298,6 +301,8 @@ export function TaskPicker({
                 Hozzáadás
               </Button>
             </span>
+            </div>
+            <TaskPreview taskId={task.id} />
           </li>
         ))}
       </ul>
@@ -658,12 +663,13 @@ export function WeekGenerator({
                 <ul className="mt-1 space-y-1 text-sm">
                   {day.tasks.map((t) => (
                     <li key={t.taskId} className="flex justify-between gap-2">
-                      <span>
+                      <div className="min-w-0">
                         {t.title}
                         <span className="ml-1 text-muted">
                           ({t.topicIds.map((id) => topicName.get(id)).filter(Boolean).join(", ")}, {TASK_TYPE_LABEL[t.type].toLowerCase()})
                         </span>
-                      </span>
+                        <TaskPreview taskId={t.taskId} />
+                      </div>
                       <span className="flex shrink-0 items-center gap-2 text-muted">
                         <Difficulty value={t.difficulty} /> {t.minutes}′
                       </span>

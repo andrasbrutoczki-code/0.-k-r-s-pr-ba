@@ -265,3 +265,42 @@ export async function applyWeekAction(
   revalidateWorksheet(parsed.data.worksheetId);
   return { ok: true };
 }
+
+export interface TaskPreview {
+  body_md: string;
+  figureUrl: string | null;
+  solution_md: string | null;
+  correct_choice: string | null;
+}
+
+/** Egy feladat előnézete a munkalap-szerkesztőhöz (lenyitáskor töltődik be). */
+export async function getTaskPreviewAction(taskId: string): Promise<TaskPreview | null> {
+  const { supabase } = await requireTeacher();
+  if (!uuid.safeParse(taskId).success) return null;
+  const { data } = await supabase
+    .from("tasks")
+    .select("body_md, figure_path, task_solutions(solution_md, correct_choice)")
+    .eq("id", taskId)
+    .maybeSingle();
+  const task = data as unknown as {
+    body_md: string;
+    figure_path: string | null;
+    task_solutions:
+      | { solution_md: string; correct_choice: string | null }
+      | { solution_md: string; correct_choice: string | null }[]
+      | null;
+  } | null;
+  if (!task) return null;
+  const solution = Array.isArray(task.task_solutions) ? task.task_solutions[0] : task.task_solutions;
+  let figureUrl: string | null = null;
+  if (task.figure_path) {
+    const { data: signed } = await supabase.storage.from("task-figures").createSignedUrl(task.figure_path, 60 * 30);
+    figureUrl = signed?.signedUrl ?? null;
+  }
+  return {
+    body_md: task.body_md,
+    figureUrl,
+    solution_md: solution?.solution_md || null,
+    correct_choice: solution?.correct_choice ?? null,
+  };
+}
