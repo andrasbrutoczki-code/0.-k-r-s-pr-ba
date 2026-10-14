@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireTeacher } from "@/lib/auth/guards";
 import { describeRpcError } from "@/lib/rpc-errors";
@@ -62,7 +63,12 @@ export type RevokeResult =
   | { status: "error"; message: string }
   | { status: "done"; removed: number; kept: number; assignmentDeleted: boolean };
 
-/** Visszavonás (egész kiosztás vagy egy tanuló). Csak az érintetlen feladatok törlődnek. */
+/**
+ * Visszavonás (egész kiosztás vagy egy tanuló). Csak az érintetlen feladatok törlődnek.
+ * Teljes visszavonás után – és ha a kiosztás kiürült – a szerver egyből a munkalap
+ * oldalára irányít (a kiosztás oldala ilyenkor már nem létezne), az eredményt
+ * URL-paraméterben adja át.
+ */
 export async function revokeAssignmentAction(_prev: RevokeResult, formData: FormData): Promise<RevokeResult> {
   const { supabase } = await requireTeacher();
   const assignmentId = uuid.safeParse(formData.get("assignment_id"));
@@ -71,6 +77,14 @@ export async function revokeAssignmentAction(_prev: RevokeResult, formData: Form
   if (!assignmentId.success || (studentId && !studentId.success)) {
     return { status: "error", message: "A kiosztás nem található." };
   }
+
+  const { data: assignment } = await supabase
+    .from("assignments")
+    .select("worksheet_id")
+    .eq("id", assignmentId.data)
+    .maybeSingle<{ worksheet_id: string }>();
+  if (!assignment) return { status: "error", message: describeRpcError({ message: "assignment_not_found" }) };
+
   const { data, error } = await supabase.rpc("revoke_assignment", {
     p_assignment_id: assignmentId.data,
     p_student_id: studentId?.success ? studentId.data : null,
@@ -78,6 +92,11 @@ export async function revokeAssignmentAction(_prev: RevokeResult, formData: Form
   if (error || !data) return { status: "error", message: describeRpcError(error) };
   const result = data as { removed: number; kept: number; assignment_deleted: boolean };
   revalidateAssignment(assignmentId.data);
+
+  if (!studentId || result.assignment_deleted) {
+    const qs = new URLSearchParams({ visszavonva: String(result.removed), megmaradt: String(result.kept) });
+    redirect(`/tanar/munkalapok/${assignment.worksheet_id}?${qs.toString()}`);
+  }
   return { status: "done", removed: result.removed, kept: result.kept, assignmentDeleted: result.assignment_deleted };
 }
 

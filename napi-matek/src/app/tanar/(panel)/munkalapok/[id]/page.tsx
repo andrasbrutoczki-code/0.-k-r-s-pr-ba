@@ -5,7 +5,7 @@ import { requireTeacher } from "@/lib/auth/guards";
 import { formatDateOnly, nextMonday, todayInBudapest } from "@/lib/schedule";
 import type { Topic } from "@/lib/tasks";
 import { estimateMinutes, type TaskType } from "@/lib/task-types";
-import { Button } from "@/components/ui";
+import { Button, Notice } from "@/components/ui";
 import { deleteWorksheetAction } from "../actions";
 import {
   AssignPanel,
@@ -34,9 +34,18 @@ interface AssignmentRow {
   student_tasks: { students: { display_name: string } | null }[];
 }
 
-export default async function WorksheetPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function WorksheetPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ visszavonva?: string; megmaradt?: string }>;
+}) {
   const { supabase } = await requireTeacher();
   const { id } = await params;
+  const revoked = await searchParams;
+  const removedCount = Number(revoked.visszavonva);
+  const keptCount = Number(revoked.megmaradt);
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 
   const [worksheetRes, itemsRes, tasksRes, topicsRes, studentsRes, assignmentsRes] = await Promise.all([
@@ -125,6 +134,15 @@ export default async function WorksheetPage({ params }: { params: Promise<{ id: 
           ← Munkalapok
         </Link>
       </p>
+
+      {revoked.visszavonva !== undefined && Number.isFinite(removedCount) ? (
+        <Notice tone={keptCount > 0 ? "warning" : "success"}>
+          Kiosztás visszavonva: {removedCount} feladat törölve.
+          {keptCount > 0
+            ? ` ${keptCount} feladat megmaradt, mert a tanuló már elkezdte, beadta vagy üzenetet írt hozzá; ezeket a kiosztás oldalán látod.`
+            : ""}
+        </Notice>
+      ) : null}
 
       <header className="space-y-1">
         <h1 className="text-3xl font-bold">{worksheet.title}</h1>

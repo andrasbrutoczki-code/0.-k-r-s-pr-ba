@@ -1,7 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState, useState } from "react";
 import {
   addStudentsAction,
   moveAssignmentAction,
@@ -99,17 +98,13 @@ export function RevokeForm({
   label,
 }: {
   assignmentId: string;
+  /** Csak dokumentációs célú: a szerver ide irányít teljes visszavonás után. */
   worksheetId: string;
   studentId?: string;
   label: string;
 }) {
-  const router = useRouter();
   const [result, action, pending] = useActionState(revokeAssignmentAction, revokeIdle);
   const [confirming, setConfirming] = useState(false);
-
-  useEffect(() => {
-    if (result.status === "done" && result.assignmentDeleted) router.push(`/tanar/munkalapok/${worksheetId}`);
-  }, [result, router, worksheetId]);
 
   return (
     <div className="space-y-2">
