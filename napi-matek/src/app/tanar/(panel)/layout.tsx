@@ -4,9 +4,11 @@ import { requireTeacher } from "@/lib/auth/guards";
 /**
  * A tanári felület kerete. A (panel) útvonalcsoport miatt a /tanar/belepes
  * kívül esik ezen a layouton, így ott nincs őr (különben végtelen átirányítás).
- * A menü a lépések előrehaladtával bővül (feladatbank, munkalapok, áttekintő).
+ * Az „Ellenőrzés” menüpont jelvénye az ellenőrzésre váró beadások és az
+ * olvasatlan tanulói üzenetek száma.
  */
 const nav = [
+  { href: "/tanar/ellenorzes", label: "Ellenőrzés" },
   { href: "/tanar/tanulok", label: "Tanulók" },
   { href: "/tanar/feladatok", label: "Feladatbank" },
   { href: "/tanar/munkalapok", label: "Munkalapok" },
@@ -14,7 +16,12 @@ const nav = [
 ];
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
-  await requireTeacher();
+  const { supabase } = await requireTeacher();
+  // Jelvény: ellenőrzésre váró beadások + olvasatlan tanulói üzenetek.
+  const { data: counts } = await supabase
+    .rpc("review_counts")
+    .maybeSingle<{ to_review: number; unread_messages: number }>();
+  const badge = (counts?.to_review ?? 0) + (counts?.unread_messages ?? 0);
 
   return (
     <div className="min-h-dvh">
@@ -31,6 +38,14 @@ export default async function TeacherLayout({ children }: { children: React.Reac
                 className="flex min-h-12 items-center font-bold text-ink underline-offset-4 hover:underline"
               >
                 {item.label}
+                {item.href === "/tanar/ellenorzes" && badge > 0 ? (
+                  <span
+                    className="ml-1.5 inline-flex min-w-6 items-center justify-center rounded-full bg-redpen px-1.5 text-sm text-white"
+                    aria-label={`${badge} teendő`}
+                  >
+                    {badge}
+                  </span>
+                ) : null}
               </Link>
             ))}
           </nav>

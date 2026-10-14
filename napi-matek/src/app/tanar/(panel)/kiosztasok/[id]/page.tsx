@@ -91,7 +91,9 @@ export default async function AssignmentPage({ params }: { params: Promise<{ id:
                   <p className="text-sm text-muted">határidő: {formatDayWithWeekday(row.due_date)}</p>
                 </div>
                 <div>
-                  <p>{row.tasks?.title}</p>
+                  <Link href={`/tanar/ellenorzes/${row.id}`} className="text-ink underline-offset-4 hover:underline">
+                    {row.tasks?.title}
+                  </Link>
                   {EDITABLE.includes(row.status) ? (
                     <StudentTaskEdit
                       assignmentId={assignment.id}

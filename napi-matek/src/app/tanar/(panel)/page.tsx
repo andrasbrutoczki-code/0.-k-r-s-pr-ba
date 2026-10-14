@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Az áttekintő a 4. lépésben készül; addig a tanulókezelés a kezdőlap. */
+/** A tanári kezdőlap az ellenőrzés áttekintője. */
 export default function TeacherHome() {
-  redirect("/tanar/tanulok");
+  redirect("/tanar/ellenorzes");
 }

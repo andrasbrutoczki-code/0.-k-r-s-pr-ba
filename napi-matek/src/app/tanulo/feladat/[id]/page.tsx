@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireStudent } from "@/lib/auth/guards";
 import { loadTaskDetails } from "@/lib/student/tasks";
+import { MarkRead } from "../../mark-read";
 import { TaskCard } from "../../task-card";
 
 export const metadata: Metadata = { title: "Feladat" };
@@ -19,6 +20,7 @@ export default async function StudentTaskPage({ params }: { params: Promise<{ id
 
   return (
     <main className="space-y-4">
+      <MarkRead studentTaskId={task.id} />
       <p>
         <Link href="/tanulo" className="text-ink underline-offset-4 hover:underline">
           ← Vissza a mai feladathoz

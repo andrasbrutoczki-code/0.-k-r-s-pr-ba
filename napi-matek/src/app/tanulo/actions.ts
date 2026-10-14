@@ -69,3 +69,10 @@ export async function sendMessageAction(studentTaskId: string, body: string): Pr
   revalidatePath("/tanulo");
   return { ok: true };
 }
+
+/** A feladat megnyitásakor a tanári üzenetek olvasottak lesznek. */
+export async function markThreadReadAction(studentTaskId: string): Promise<void> {
+  const { supabase } = await requireStudent();
+  if (!uuid.safeParse(studentTaskId).success) return;
+  await supabase.rpc("mark_thread_read", { p_student_task_id: studentTaskId });
+}
