@@ -88,7 +88,8 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
     supabase
       .from("student_tasks")
       .select("id")
-      .eq("status", "submitted")
+      // Ellenőrzésre vár: beadva, vagy megnyitva, de még döntés nélkül.
+      .in("status", ["submitted", "in_review"])
       .neq("id", id)
       .order("last_submitted_at", { ascending: true })
       .limit(1)
@@ -229,6 +230,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
             <ReviewPanel
               id={row.id}
               status={row.status}
+              nextId={nextId}
               ai={
                 latestSubmission
                   ? {

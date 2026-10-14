@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MathText } from "@/components/math-text";
 import { Button, Notice } from "@/components/ui";
@@ -39,9 +40,12 @@ export function ReviewPanel({
   id,
   status,
   ai,
+  nextId,
 }: {
   id: string;
   status: TaskStatus;
+  /** A következő ellenőrzésre váró beadás (ha van). */
+  nextId?: string;
   /** AI-javaslat a legutóbbi beadott változatra (null, ha nincs beadás). */
   ai: { initial: AiReview | null; remaining: number } | null;
 }) {
@@ -133,6 +137,16 @@ export function ReviewPanel({
         >
           Csak üzenet küldése
         </Button>
+        {nextId ? (
+          <Link
+            href={`/tanar/ellenorzes/${nextId}`}
+            className="ml-auto inline-flex min-h-12 items-center justify-center rounded-md border border-ink/40 bg-sheet px-5 font-bold text-ink hover:bg-ink-soft"
+          >
+            Következő →
+          </Link>
+        ) : (
+          <span className="ml-auto self-center text-sm text-muted">Nincs több ellenőrzésre váró.</span>
+        )}
       </div>
       <p className="text-xs text-muted">
         A döntés mellé írt szöveg is a tanuló üzenetszálába kerül, időbélyeggel.
