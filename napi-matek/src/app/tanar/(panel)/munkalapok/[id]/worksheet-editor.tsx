@@ -350,7 +350,8 @@ export function AssignPanel({
   const [start, setStart] = useState(defaultStart);
   const [selected, setSelected] = useState<string[]>([]);
 
-  const startIsMonday = /^\d{4}-\d{2}-\d{2}$/.test(start) && isoWeekday(start) === 1;
+  const startValid = /^\d{4}-\d{2}-\d{2}$/.test(start) && isoWeekday(start) !== 7;
+  const startIsMonday = startValid && isoWeekday(start) === 1;
   const lastItem = items.reduce<EditorItem | null>(
     (latest, item) =>
       !latest || item.week_no * 10 + item.day_no > latest.week_no * 10 + latest.day_no ? item : latest,
@@ -402,12 +403,16 @@ export function AssignPanel({
       </fieldset>
 
       <Field
-        label="Kezdőnap (hétfő)"
+        label="Kezdőnap"
         htmlFor="start_date"
         hint={
-          startIsMonday && lastItem
-            ? `Az utolsó feladat napja: ${formatDayWithWeekday(scheduledDate(start, lastItem.week_no, lastItem.day_no))}.`
-            : "A gyakorlási hét hétfőtől szombatig tart; a határidő a hét vasárnapja."
+          startValid && lastItem
+            ? `Első feladat: ${formatDayWithWeekday(start)}, utolsó: ${formatDayWithWeekday(
+                scheduledDate(start, lastItem.week_no, lastItem.day_no),
+              )}. A határidő mindig az adott hét vasárnapja.${
+                startIsMonday ? "" : " Nem hétfői kezdésnél a feladatok gyakorlási napokban tolódnak (vasárnap kimarad)."
+              }`
+            : "Bármely nap lehet, kivéve vasárnap. A határidő mindig az adott hét vasárnapja."
         }
       >
         <Input
@@ -420,7 +425,7 @@ export function AssignPanel({
           className="w-52"
         />
       </Field>
-      {!startIsMonday && start ? <Notice tone="warning">A kezdőnap csak hétfő lehet.</Notice> : null}
+      {!startValid && start ? <Notice tone="warning">Vasárnap szünnap, válassz másik kezdőnapot.</Notice> : null}
 
       {state.status === "error" ? <Notice tone="error">{state.message}</Notice> : null}
       {state.status === "done" ? (
@@ -432,7 +437,7 @@ export function AssignPanel({
         </Notice>
       ) : null}
 
-      <Button type="submit" disabled={pending || selected.length === 0 || !startIsMonday || items.length === 0}>
+      <Button type="submit" disabled={pending || selected.length === 0 || !startValid || items.length === 0}>
         {pending ? "Kiosztás…" : `Kiosztás ${selected.length || ""} tanulónak`.replace("  ", " ")}
       </Button>
     </form>

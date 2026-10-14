@@ -53,14 +53,14 @@ select move_worksheet_item(
   (select id from worksheet_items where worksheet_id = (select v from ids where k = 'ws') and position = 1), -1);
 select _t(true, 'move_worksheet_item: az első tétel felfelé mozgatása nem hiba');
 
--- Kiosztás: egy művelet, 3 tanuló.
+-- Kiosztás: egy művelet, 3 tanuló. Vasárnapi kezdés nem lehet.
 do $$ begin
-  perform assign_worksheet((select v from ids where k = 'ws'), '2026-10-13',
+  perform assign_worksheet((select v from ids where k = 'ws'), '2026-10-18',
     array['00000000-0000-0000-0000-0000000000a1']::uuid[]);
-  raise exception 'FAIL: keddi kezdőnap elfogadva';
+  raise exception 'FAIL: vasárnapi kezdőnap elfogadva';
 exception when raise_exception then
-  if sqlerrm <> 'start_not_monday' then raise; end if;
-  raise notice 'ok  - a kezdőnap csak hétfő lehet';
+  if sqlerrm <> 'start_is_sunday' then raise; end if;
+  raise notice 'ok  - vasárnapra nem eshet a kezdőnap';
 end $$;
 
 insert into ids values ('as', assign_worksheet((select v from ids where k = 'ws'), '2026-10-12',
@@ -78,6 +78,25 @@ select _t(
           '2026-10-15>2026-10-18','2026-10-16>2026-10-18','2026-10-17>2026-10-18',
           '2026-10-19>2026-10-25'],
   'ütemezés: H–Szo az 1. héten (határidő vasárnap), a 7. tétel a 2. hét hétfője');
+
+-- Szerdai kezdés: a tételek gyakorlási napokban tolódnak, vasárnap kimarad.
+insert into ids values ('as_wed', assign_worksheet((select v from ids where k = 'ws'), '2026-10-14',
+  array['00000000-0000-0000-0000-0000000000a1']::uuid[]));
+select _t(
+  (select array_agg(scheduled_date::text || '>' || due_date::text order by scheduled_date)
+     from student_tasks where assignment_id = (select v from ids where k = 'as_wed'))
+  = array['2026-10-14>2026-10-18','2026-10-15>2026-10-18','2026-10-16>2026-10-18',
+          '2026-10-17>2026-10-18','2026-10-19>2026-10-25','2026-10-20>2026-10-25',
+          '2026-10-21>2026-10-25'],
+  'szerdai kezdés: Sze, Cs, P, Szo, majd H, K, Sze; határidő az adott hét vasárnapja');
+select _t((select bool_and(extract(isodow from scheduled_date) <> 7) from student_tasks),
+          'egyetlen feladat sem esik vasárnapra');
+reset role;
+select _t(_add_practice_days('2026-10-12', 0) = '2026-10-12' and _add_practice_days('2026-10-12', 6) = '2026-10-19'
+          and _add_practice_days('2026-10-17', 1) = '2026-10-19',
+          '_add_practice_days: hétfőtől 6 nap = következő hétfő, szombat után hétfő');
+set local role authenticated;
+select _login('00000000-0000-0000-0000-0000000000a0');
 
 -- Letiltott tanuló nem kaphat kiosztást.
 select set_student_disabled('00000000-0000-0000-0000-0000000000a4', true);

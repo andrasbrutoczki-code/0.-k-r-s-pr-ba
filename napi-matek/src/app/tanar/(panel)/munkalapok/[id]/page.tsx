@@ -139,7 +139,8 @@ export default async function WorksheetPage({ params }: { params: Promise<{ id: 
           Feladatok és ütemezés
         </h2>
         <p className="text-sm text-muted">
-          A nap a kiosztás kezdő hétfőjéhez képest értendő. Szombat az ismétlés és pótlás napja, vasárnap szünnap.
+          A nap a kiosztás kezdőnapjához képest értendő (hétfői kezdésnél a napnevek egyeznek). Szombat az ismétlés
+          és pótlás napja, vasárnap szünnap.
           Egy napra több feladat is kerülhet.
         </p>
         <ItemsEditor worksheetId={worksheet.id} items={items} />

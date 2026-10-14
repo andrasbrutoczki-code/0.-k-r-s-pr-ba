@@ -53,9 +53,20 @@ export function nextMonday(today: string): string {
   return weekday === 1 ? today : addDays(today, 8 - weekday);
 }
 
-/** Egy tétel napja a kiosztás kezdő hétfőjéhez képest – ugyanaz, mint az SQL-ben. */
-export function scheduledDate(startMonday: string, weekNo: number, dayNo: number): string {
-  return addDays(startMonday, 7 * (weekNo - 1) + (dayNo - 1));
+/** d + n gyakorlási nap (H–Szo), a vasárnapokat átugorva – ugyanaz, mint az SQL _add_practice_days. */
+export function addPracticeDays(value: string, n: number): string {
+  const offset = isoWeekday(value) - 1; // 0 = hétfő … 5 = szombat
+  const monday = addDays(value, -offset);
+  const total = offset + n;
+  return addDays(monday, 7 * Math.floor(total / 6) + (total % 6));
+}
+
+/**
+ * Egy tétel napja a kiosztás kezdőnapjához képest – ugyanaz, mint az SQL-ben.
+ * Az 1. hét hétfője a kezdőnapra esik; hétfői kezdésnél a napnevek egyeznek.
+ */
+export function scheduledDate(start: string, weekNo: number, dayNo: number): string {
+  return addPracticeDays(start, 6 * (weekNo - 1) + (dayNo - 1));
 }
 
 const dateOnlyFmt = new Intl.DateTimeFormat("hu-HU", {

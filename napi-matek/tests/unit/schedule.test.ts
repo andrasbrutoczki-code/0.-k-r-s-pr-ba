@@ -29,6 +29,13 @@ describe("ütemezés", () => {
     expect(scheduledDate("2026-10-12", 2, 1)).toBe("2026-10-19");
   });
 
+  it("bármely napon induló kiosztás: vasárnap kimarad", () => {
+    expect(scheduledDate("2026-10-14", 1, 1)).toBe("2026-10-14"); // szerda
+    expect(scheduledDate("2026-10-14", 1, 4)).toBe("2026-10-17"); // szombat
+    expect(scheduledDate("2026-10-14", 1, 5)).toBe("2026-10-19"); // hétfő
+    expect(scheduledDate("2026-10-17", 1, 2)).toBe("2026-10-19"); // szombat → hétfő
+  });
+
   it("magyar megjelenítés", () => {
     expect(describeSlot(1, 2)).toBe("1. hét, kedd");
     expect(formatDayWithWeekday("2026-10-13")).toBe("október 13., kedd");

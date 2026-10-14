@@ -152,7 +152,7 @@ export async function assignWorksheetAction(_prev: AssignResult, formData: FormD
   const startDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).safeParse(formData.get("start_date"));
   const studentIds = z.array(uuid).safeParse(formData.getAll("student_ids"));
   if (!worksheetId.success) return { status: "error", message: "A munkalap nem található." };
-  if (!startDate.success) return { status: "error", message: "Adj meg egy kezdőnapot (hétfő)." };
+  if (!startDate.success) return { status: "error", message: "Adj meg egy kezdőnapot." };
   if (!studentIds.success || studentIds.data.length === 0) {
     return { status: "error", message: "Válassz legalább egy tanulót." };
   }
