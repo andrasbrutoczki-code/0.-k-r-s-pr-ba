@@ -16,7 +16,7 @@ beadással; tanári ellenőrzés tesztjavítással és AI-asszisztenssel; statis
 | Adat, Auth, fájlok | Supabase (Postgres + RLS, Auth, Storage) | A jogosultság az adatbázisban dől el: egy hibás lekérdezés sem ad ki idegen adatot. |
 | Stílus | Tailwind CSS 4, saját kis komponensek | Kevés függőség, egy helyen élő design tokenek (`src/app/globals.css`). |
 | Validáció | zod | Ugyanaz a séma ellenőrzi az űrlapokat és (később) az importot. |
-| Hoszting | Netlify (ingyenes) + Supabase (ingyenes) | A Vercel ingyenes csomagja nem engedi a kereskedelmi használatot. |
+| Hoszting | Cloudflare Workers (OpenNext) + Supabase (ingyenes) | A Vercel ingyenes csomagja nem engedi a kereskedelmi használatot; a Netlify ingyenes kerete havi ~20 kitelepítést enged. |
 
 ### Belépés és jogosultságok
 
@@ -115,15 +115,25 @@ A `test:db` a szokásos `PGHOST`, `PGUSER`, `PGPASSWORD` változókkal csatlakoz
 és egy ideiglenes `napi_matek_test` adatbázist használ. A GitHub Actions (CI)
 minden pushnál lefuttatja az összes ellenőrzést.
 
-### 4. Élesítés Netlify-on
+### 4. Élesítés Cloudflare-en
 
-1. A Netlify-on: **Add new site → Import an existing project**, válaszd ki a
-   GitHub-repót. A Next.js-t automatikusan felismeri.
-2. **Site configuration → Environment variables:** add meg a három
-   `SUPABASE` változót a `.env.example` alapján. A `SUPABASE_SECRET_KEY`
-   legyen „secret” jelölésű.
-3. Deploy. Ezután a Supabase-ben (**Authentication → URL Configuration**)
-   állítsd a Site URL-t a Netlify-címre.
+A Next.js az [OpenNext](https://opennext.js.org/cloudflare) adapterrel Cloudflare
+Workeren fut (`wrangler.jsonc`, `open-next.config.ts`). A nyilvános Supabase-értékek
+a `.env.production` fájlban vannak; a titkos kulcs csak a Cloudflare-ben.
+
+1. Cloudflare → **Workers & Pages → Create → Import a repository**, a GitHub-repó.
+   - Project name: `napi-matek` (egyezzen a `wrangler.jsonc` nevével)
+   - Root directory: `napi-matek`
+   - Build command: `npx opennextjs-cloudflare build`
+   - Deploy command: `npx opennextjs-cloudflare deploy`
+2. A Worker → **Settings → Variables and Secrets:** `SUPABASE_SECRET_KEY`
+   „Secret” típusként.
+3. Supabase → **Authentication → URL Configuration:** Site URL = a Worker címe
+   (`https://napi-matek.<fiók>.workers.dev`).
+
+Korlátok az ingyenes Workers-csomagban: a Worker tömörítve legfeljebb 3 MiB, és
+kérésenként kevés CPU-idő jár. Ha a build „size limit” hibát ad, vagy az oldalon
+időnként 1102-es hiba jelenik meg, a Workers Paid (havi 5 USD) megoldja.
 
 A Supabase ingyenes projektje egy hét teljes inaktivitás után szünetel;
 napi használat mellett ez nem fordul elő.
@@ -182,8 +192,8 @@ Beállítás:
    Nem kötelező: `AI_REVIEW_MODEL` (alapból `claude-sonnet-5-5`).
 3. Telepítés (ha módosul): `supabase functions deploy ai-review`.
 
-Miért Edge Function? A Netlify ingyenes csomagjában a szerverfüggvény 10 mp után
-leáll, egy képes elemzés pedig tovább is tarthat.
+Miért Edge Function? Egy képes elemzés 20–60 mp is lehet; a Supabase Edge Function
+ezt bírja, és így a weboldal kiszolgálójától független.
 
 ## Statisztika
 

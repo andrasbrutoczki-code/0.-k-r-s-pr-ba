@@ -1,6 +1,6 @@
 /**
  * Magyar dátumformázás, mindig Europe/Budapest időzónában – a szerver
- * (Netlify: UTC) és a böngésző időzónájától függetlenül.
+ * (a kiszolgáló: UTC) és a böngésző időzónájától függetlenül.
  */
 
 const TZ = "Europe/Budapest";
