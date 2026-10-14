@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireTeacher } from "@/lib/auth/guards";
-import type { TaskListItem, Topic } from "@/lib/tasks";
+import type { TaskListItem } from "@/lib/tasks";
+import { loadTopics, topicIdsOf, topicNames } from "@/lib/topics";
 import { MathText } from "@/components/math-text";
 import { Difficulty, Notice } from "@/components/ui";
 import { TASK_TYPES, TASK_TYPE_LABEL, estimateMinutes, type TaskType } from "@/lib/task-types";
@@ -10,6 +11,7 @@ export const metadata: Metadata = { title: "Feladatbank" };
 
 interface TaskRow extends TaskListItem {
   worksheet_items: { count: number }[];
+  task_topics: { topic_id: number }[];
 }
 
 type SearchParams = Promise<{
@@ -33,21 +35,21 @@ export default async function TaskBankPage({ searchParams }: { searchParams: Sea
   const params = await searchParams;
   const showArchived = params.archiv === "1";
 
-  const { data: topicData } = await supabase.from("topics").select("id, slug, name").order("id");
-  const topics = (topicData ?? []) as Topic[];
-  const topicById = new Map(topics.map((t) => [t.id, t]));
+  const topics = await loadTopics(supabase);
+  const topicName = new Map(topics.map((t) => [t.id, t.name]));
+  const topic = topics.find((t) => t.slug === params.tema);
 
+  // Témakörszűrésnél a feladat bármelyik témaköre számít: a szűrő külön,
+  // „inner” beágyazáson fut, hogy a megjelenített témakörlista teljes maradjon.
+  const columns =
+    "id, title, body_md, difficulty, requires_image, figure_path, archived_at, topic_id, task_type, est_minutes, worksheet_items(count), task_topics(topic_id)";
   let query = supabase
     .from("tasks")
-    .select(
-      "id, title, body_md, difficulty, requires_image, figure_path, archived_at, topic_id, task_type, est_minutes, worksheet_items(count)",
-      { count: "exact" },
-    )
+    .select(topic ? `${columns}, szuro:task_topics!inner(topic_id)` : columns, { count: "exact" })
     .order("created_at", { ascending: false })
     .order("id");
 
-  const topic = topics.find((t) => t.slug === params.tema);
-  if (topic) query = query.eq("topic_id", topic.id);
+  if (topic) query = query.eq("szuro.topic_id", topic.id);
   const difficulty = Number(params.nehezseg);
   if (Number.isInteger(difficulty) && difficulty >= 1 && difficulty <= 5) query = query.eq("difficulty", difficulty);
   if (TASK_TYPES.includes(params.tipus as TaskType)) query = query.eq("task_type", params.tipus!);
@@ -57,7 +59,7 @@ export default async function TaskBankPage({ searchParams }: { searchParams: Sea
   const page = Math.max(1, Number.parseInt(params.oldal ?? "1", 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
   const { data, error, count } = await query.range(from, from + PAGE_SIZE - 1);
-  const tasks = (data ?? []) as TaskRow[];
+  const tasks = (data ?? []) as unknown as TaskRow[];
   const total = count ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -173,7 +175,7 @@ export default async function TaskBankPage({ searchParams }: { searchParams: Sea
                 <Difficulty value={task.difficulty} />
               </div>
               <p className="mt-1 text-sm text-muted">
-                {topicById.get(task.topic_id)?.name ?? "?"}, {TASK_TYPE_LABEL[task.task_type].toLowerCase()}, ~
+                {topicNames(topicIdsOf(task.task_topics, topics), topicName) || "?"}, {TASK_TYPE_LABEL[task.task_type].toLowerCase()}, ~
                 {estimateMinutes(task.task_type, task.difficulty, task.est_minutes)} perc
                 {task.requires_image ? ", fényképpel beadandó" : ""}
                 {task.figure_path ? ", ábrával" : ""}

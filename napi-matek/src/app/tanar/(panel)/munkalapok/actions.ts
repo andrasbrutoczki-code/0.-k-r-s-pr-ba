@@ -214,7 +214,9 @@ export async function previewWeekAction(input: GeneratorInput): Promise<PreviewR
     (data ?? []) as {
       id: string;
       title: string;
-      topic_id: number;
+      /** Az új adatbázis-függvény összes témakört ad; a régi csak egyet. */
+      topic_ids?: number[] | null;
+      topic_id?: number;
       difficulty: number;
       task_type: TaskType;
       est_minutes: number | null;
@@ -222,7 +224,7 @@ export async function previewWeekAction(input: GeneratorInput): Promise<PreviewR
   ).map((t) => ({
     id: t.id,
     title: t.title,
-    topicId: t.topic_id,
+    topicIds: t.topic_ids ?? (t.topic_id ? [t.topic_id] : []),
     difficulty: t.difficulty,
     type: t.task_type,
     estMinutes: t.est_minutes,

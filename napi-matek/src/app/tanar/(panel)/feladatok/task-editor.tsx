@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { saveTaskAction, type SaveTaskState } from "./actions";
 import { MathText } from "@/components/math-text";
-import { Button, Field, Input, Notice, Select, Textarea } from "@/components/ui";
+import { Button, Field, Input, Notice, Textarea } from "@/components/ui";
 import type { Topic } from "@/lib/tasks";
 import {
   TASK_TYPES,
@@ -17,7 +17,8 @@ import {
 export interface TaskEditorValues {
   id?: string;
   title: string;
-  topic_id: number | null;
+  /** A feladat témakörei; az első az elsődleges. */
+  topic_ids: number[];
   difficulty: number;
   requires_image: boolean;
   task_type: TaskType;
@@ -88,7 +89,7 @@ export function TaskEditor({
   // Minden mező vezérelt: a React 19 a beküldés után alaphelyzetbe állítja az
   // űrlapot, így hibánál sem vész el, amit a tanár beírt.
   const [title, setTitle] = useState(initial.title);
-  const [topicId, setTopicId] = useState(initial.topic_id ? String(initial.topic_id) : "");
+  const [topicIds, setTopicIds] = useState<number[]>(initial.topic_ids);
   const [difficulty, setDifficulty] = useState(initial.difficulty);
   const [requiresImage, setRequiresImage] = useState(initial.requires_image);
   const [taskType, setTaskType] = useState<TaskType>(initial.task_type);
@@ -116,36 +117,47 @@ export function TaskEditor({
     <form action={formAction} className="space-y-6" noValidate>
       {initial.id ? <input type="hidden" name="id" value={initial.id} /> : null}
 
-      <div className="grid gap-4 md:grid-cols-[1fr_auto]">
-        <Field label="Cím" htmlFor="title">
-          <Input
-            id="title"
-            name="title"
-            required
-            maxLength={200}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-        </Field>
-        <Field label="Témakör" htmlFor="topic_id">
-          <Select
-            id="topic_id"
-            name="topic_id"
-            required
-            value={topicId}
-            onChange={(e) => setTopicId(e.target.value)}
-          >
-            <option value="" disabled>
-              Válassz…
-            </option>
-            {topics.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </Select>
-        </Field>
-      </div>
+      <Field label="Cím" htmlFor="title">
+        <Input
+          id="title"
+          name="title"
+          required
+          maxLength={200}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+      </Field>
+
+      <fieldset>
+        <legend className="mb-1.5 font-bold">
+          Témakörök <span className="font-normal text-muted">(egy vagy több; az első bejelölt az elsődleges)</span>
+        </legend>
+        <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
+          {topics.map((t) => (
+            <label
+              key={t.id}
+              className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md border border-rule bg-sheet px-3 text-sm has-[:checked]:border-ink has-[:checked]:bg-ink-soft"
+            >
+              <input
+                type="checkbox"
+                name="topic_ids"
+                value={t.id}
+                checked={topicIds.includes(t.id)}
+                onChange={() =>
+                  setTopicIds((ids) => (ids.includes(t.id) ? ids.filter((x) => x !== t.id) : [...ids, t.id]))
+                }
+                className="h-4 w-4 shrink-0"
+              />
+              {t.name}
+              {topicIds[0] === t.id && topicIds.length > 1 ? (
+                <span className="ml-auto text-xs text-muted">elsődleges</span>
+              ) : null}
+            </label>
+          ))}
+        </div>
+        {/* A bejelölés sorrendje számít (az első az elsődleges), ezért külön küldjük. */}
+        <input type="hidden" name="topic_order" value={topicIds.join(",")} />
+      </fieldset>
 
       <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
         <fieldset>

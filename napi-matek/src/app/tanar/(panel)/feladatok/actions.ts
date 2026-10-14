@@ -17,7 +17,7 @@ const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 const taskSchema = z.object({
   id: z.string().uuid().optional(),
   title: z.string().trim().min(1, "Adj címet a feladatnak.").max(200, "A cím legfeljebb 200 karakter."),
-  topic_id: z.coerce.number().int().positive("Válassz témakört."),
+  topic_ids: z.array(z.number().int().positive()).min(1, "Válassz legalább egy témakört.").max(10),
   difficulty: z.coerce.number().int().min(1).max(5, "A nehézség 1 és 5 közötti."),
   requires_image: z.boolean(),
   task_type: z.enum(["teszt", "rovid", "kifejtos"], { message: "Válassz feladattípust." }),
@@ -46,7 +46,11 @@ export async function saveTaskAction(_prev: SaveTaskState, formData: FormData): 
   const parsed = taskSchema.safeParse({
     id: formData.get("id") || undefined,
     title: formData.get("title"),
-    topic_id: formData.get("topic_id"),
+    // A bejelölés sorrendje (az első az elsődleges); ha hiányzik, a jelölőnégyzetek sorrendje.
+    topic_ids: (String(formData.get("topic_order") ?? "") || formData.getAll("topic_ids").join(","))
+      .split(",")
+      .filter(Boolean)
+      .map(Number),
     difficulty: formData.get("difficulty"),
     requires_image: formData.get("requires_image") === "on",
     task_type: formData.get("task_type"),
@@ -59,7 +63,8 @@ export async function saveTaskAction(_prev: SaveTaskState, formData: FormData): 
     const issue = parsed.error.issues[0];
     return { status: "error", message: issue?.message ?? "Hibás adat.", field: issue?.path[0]?.toString() };
   }
-  const { id: existingId, solution_md, correct_choice, ...fields } = parsed.data;
+  const { id: existingId, solution_md, correct_choice, topic_ids, ...rest } = parsed.data;
+  const fields = { ...rest, topic_id: topic_ids[0]! };
   // A helyes válasz csak tesztnél értelmes.
   const choice = fields.task_type === "teszt" && correct_choice ? correct_choice : null;
 
@@ -97,6 +102,10 @@ export async function saveTaskAction(_prev: SaveTaskState, formData: FormData): 
     if (error || !data) return { status: "error", message: "A mentés nem sikerült." };
     id = data.id;
   }
+
+  // Témakörök (több is lehet): egy tranzakcióban, az első az elsődleges.
+  const { error: topicError } = await supabase.rpc("set_task_topics", { p_task_id: id, p_topic_ids: topic_ids });
+  if (topicError) return { status: "error", message: "A témakörök mentése nem sikerült.", field: "topic_ids" };
 
   // Megoldási útmutató és helyes válasz: külön, csak tanár által olvasható táblában.
   const solutionResult =

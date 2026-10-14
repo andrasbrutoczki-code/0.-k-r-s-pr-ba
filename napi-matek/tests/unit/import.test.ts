@@ -9,25 +9,51 @@ import {
 } from "../../src/lib/import/parse.ts";
 
 const topics = [
-  { slug: "algebra", name: "Algebra, egyenletek" },
-  { slug: "fuggvenyek", name: "Függvények" },
-  { slug: "valoszinuseg", name: "Valószínűség, statisztika" },
-  { slug: "geometria", name: "Geometria" },
-  { slug: "halmazok-logika", name: "Halmazok, logika" },
-  { slug: "sorozatok", name: "Sorozatok" },
-  { slug: "koordinatageom", name: "Koordinátageometria" },
-  { slug: "trigonometria", name: "Trigonometria" },
-  { slug: "kombinatorika", name: "Kombinatorika" },
-  { slug: "analizis", name: "Analízis" },
-];
+  ["abszolutertek-gyok", "Abszolútérték, gyök"],
+  ["egyenletek", "Egyenletek, egyenlőtlenségek, egyenletrendszerek"],
+  ["egyszerusites", "Egyszerűsítés, átalakítás"],
+  ["fuggvenytulajdonsagok", "Függvénytulajdonságok és -transzformációk"],
+  ["exponencialis", "Exponenciális feladatok"],
+  ["logaritmus", "Logaritmusos feladatok"],
+  ["fuggvenyanalizis", "Függvényanalízis"],
+  ["halmazok", "Halmazok"],
+  ["koordinatageom", "Koordinátageometria"],
+  ["logika", "Logika"],
+  ["grafok", "Gráfok"],
+  ["sikgeometria", "Síkgeometria"],
+  ["sorozatok", "Sorozatok"],
+  ["sorozat-hatarertek", "Sorozat határértéke"],
+  ["statisztika", "Statisztika"],
+  ["szamelmelet", "Számelmélet"],
+  ["trigonometria", "Trigonometria"],
+  ["valoszinusegszamitas", "Valószínűségszámítás"],
+  ["kombinatorika", "Kombinatorika"],
+  ["szelsoertek", "Szélsőértékkeresés"],
+  ["hatarozott-integral", "Határozott integrál"],
+  ["hatarozatlan-integral", "Határozatlan integrál"],
+].map(([slug, name]) => ({ slug: slug!, name: name! }));
 
 describe("témakör-egyeztetés", () => {
   it("slug, név, ékezet nélkül és egyértelmű kezdet", () => {
-    expect(matchTopic("fuggvenyek", topics)?.slug).toBe("fuggvenyek");
-    expect(matchTopic("Függvények", topics)?.slug).toBe("fuggvenyek");
-    expect(matchTopic("valószínűség", topics)?.slug).toBe("valoszinuseg");
-    expect(matchTopic("geo", topics)?.slug).toBe("geometria");
+    expect(matchTopic("egyenletek", topics)?.slug).toBe("egyenletek");
+    expect(matchTopic("Síkgeometria", topics)?.slug).toBe("sikgeometria");
+    expect(matchTopic("valószínűségszámítás", topics)?.slug).toBe("valoszinusegszamitas");
+    expect(matchTopic("loga", topics)?.slug).toBe("logaritmus");
     expect(matchTopic("ko", topics)).toBeNull(); // Koordinátageometria és Kombinatorika: nem egyértelmű
+  });
+
+  it("több témakör: „|” vagy „;” jellel, JSON-tömbként; az első az elsődleges", () => {
+    const rows = parseJsonImport(
+      JSON.stringify([
+        { cim: "A", szoveg: "x", temakor: "logaritmus|exponencialis", nehezseg: 2 },
+        { cim: "B", szoveg: "x", temakor: ["Síkgeometria", "kombinatorika", "sikgeometria"], nehezseg: 2 },
+        { cim: "C", szoveg: "x", temakor: "egyenletek; nincs-ilyen", nehezseg: 2 },
+      ]),
+      { topics },
+    );
+    expect(rows[0]!.row?.topic_slugs).toEqual(["logaritmus", "exponencialis"]);
+    expect(rows[1]!.row?.topic_slugs).toEqual(["sikgeometria", "kombinatorika"]);
+    expect(rows[2]!.errors.length).toBe(1);
   });
 });
 
@@ -44,9 +70,9 @@ describe("JSON import", () => {
   it("hibás sorokat jelez, a jókat megtartja", () => {
     const rows = parseJsonImport(
       JSON.stringify([
-        { cim: "Jó", szoveg: "$x$", temakor: "algebra", nehezseg: 2 },
+        { cim: "Jó", szoveg: "$x$", temakor: "egyenletek", nehezseg: 2 },
         { cim: "", szoveg: "", temakor: "nincs", nehezseg: 9, kep_kell: "talán" },
-        { "Cím": "Ábrás", "Szöveg": "a", "Témakör": "Geometria", "Nehézség": "3", "ábra": "a.png", pontszam: 5 },
+        { "Cím": "Ábrás", "Szöveg": "a", "Témakör": "Síkgeometria", "Nehézség": "3", "ábra": "a.png", pontszam: 5 },
       ]),
       { topics },
     );
@@ -57,7 +83,7 @@ describe("JSON import", () => {
   });
 
   it("ZIP-ben az ábra hivatkozás ellenőrzött", () => {
-    const base = { cim: "A", szoveg: "a", temakor: "geometria", nehezseg: 1 };
+    const base = { cim: "A", szoveg: "a", temakor: "sikgeometria", nehezseg: 1 };
     const rows = parseJsonImport(
       JSON.stringify({ feladatok: [{ ...base, abra: "van.png" }, { ...base, cim: "B", abra: "nincs.png" }] }),
       { topics, figures: new Set(["van.png"]) },
@@ -81,9 +107,9 @@ describe("típus és idő az importban", () => {
   it("teszt felismerése, alapból nem kér képet; ismeretlen típus hiba", () => {
     const rows = parseJsonImport(
       JSON.stringify([
-        { cim: "A", szoveg: "Melyik?\n(A) 1\n(B) 2", temakor: "algebra", nehezseg: 1 },
-        { cim: "B", szoveg: "x", temakor: "algebra", nehezseg: 2, tipus: "kifejtős", ido_perc: 15 },
-        { cim: "C", szoveg: "x", temakor: "algebra", nehezseg: 2, tipus: "esszé", ido_perc: 500 },
+        { cim: "A", szoveg: "Melyik?\n(A) 1\n(B) 2", temakor: "egyenletek", nehezseg: 1 },
+        { cim: "B", szoveg: "x", temakor: "egyenletek", nehezseg: 2, tipus: "kifejtős", ido_perc: 15 },
+        { cim: "C", szoveg: "x", temakor: "egyenletek", nehezseg: 2, tipus: "esszé", ido_perc: 500 },
       ]),
       { topics },
     );
@@ -98,11 +124,11 @@ describe("típus és idő az importban", () => {
   it("helyes válasz: megadva, útmutatóból kiolvasva, hibás, nem teszthez", () => {
     const rows = parseJsonImport(
       JSON.stringify([
-        { cim: "A", szoveg: "(A) 1 (B) 2", temakor: "algebra", nehezseg: 1, helyes: "(b)" },
-        { cim: "B", szoveg: "(A) 1 (B) 2", temakor: "algebra", nehezseg: 1, megoldasi_utmutato: "Helyes válasz: (A) 1." },
-        { cim: "C", szoveg: "(A) 1 (B) 2", temakor: "algebra", nehezseg: 1, helyes: "X" },
-        { cim: "D", szoveg: "x", temakor: "algebra", nehezseg: 1, tipus: "kifejtos", helyes: "A" },
-        { cim: "E", szoveg: "(A) 1 (B) 2", temakor: "algebra", nehezseg: 1 },
+        { cim: "A", szoveg: "(A) 1 (B) 2", temakor: "egyenletek", nehezseg: 1, helyes: "(b)" },
+        { cim: "B", szoveg: "(A) 1 (B) 2", temakor: "egyenletek", nehezseg: 1, megoldasi_utmutato: "Helyes válasz: (A) 1." },
+        { cim: "C", szoveg: "(A) 1 (B) 2", temakor: "egyenletek", nehezseg: 1, helyes: "X" },
+        { cim: "D", szoveg: "x", temakor: "egyenletek", nehezseg: 1, tipus: "kifejtos", helyes: "A" },
+        { cim: "E", szoveg: "(A) 1 (B) 2", temakor: "egyenletek", nehezseg: 1 },
       ]),
       { topics },
     );
@@ -133,13 +159,13 @@ describe("CSV import", () => {
 
   it("vesszővel elválasztva, CRLF sorvégekkel is", () => {
     const rows = parseCsvImport(
-      "cim,szoveg,temakor,nehezseg,kep_kell\r\nA,$1+1$,algebra,1,nem\r\n",
+      "cim,szoveg,temakor,nehezseg,kep_kell\r\nA,$1+1$,egyenletek,1,nem\r\n",
       { topics },
     );
     expect(rows[0]!.row).toEqual({
       title: "A",
       body_md: "$1+1$",
-      topic_slug: "algebra",
+      topic_slugs: ["egyenletek"],
       difficulty: 1,
       requires_image: false,
       task_type: "rovid",

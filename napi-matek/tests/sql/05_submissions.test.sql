@@ -18,10 +18,10 @@ select _login('00000000-0000-0000-0000-0000000000a0');
 select create_student('00000000-0000-0000-0000-0000000000a1', 'Anna');
 select create_student('00000000-0000-0000-0000-0000000000a2', 'Bence');
 select import_tasks('[
-  {"title":"Teszt","body_md":"?\n(A) 1\n(B) 2\n(C) 3\n(D) 4","topic_slug":"algebra","difficulty":1,"requires_image":false,"task_type":"teszt"},
-  {"title":"Rövid","body_md":"x=?","topic_slug":"algebra","difficulty":1,"requires_image":false,"task_type":"rovid"},
-  {"title":"Kifejtős","body_md":"Igazolja!","topic_slug":"algebra","difficulty":2,"requires_image":true,"task_type":"kifejtos"},
-  {"title":"Holnapi","body_md":"később","topic_slug":"algebra","difficulty":1,"requires_image":false,"task_type":"rovid"}
+  {"title":"Teszt","body_md":"?\n(A) 1\n(B) 2\n(C) 3\n(D) 4","topic_slug":"egyenletek","difficulty":1,"requires_image":false,"task_type":"teszt"},
+  {"title":"Rövid","body_md":"x=?","topic_slug":"egyenletek","difficulty":1,"requires_image":false,"task_type":"rovid"},
+  {"title":"Kifejtős","body_md":"Igazolja!","topic_slug":"egyenletek","difficulty":2,"requires_image":true,"task_type":"kifejtos"},
+  {"title":"Holnapi","body_md":"később","topic_slug":"egyenletek","difficulty":1,"requires_image":false,"task_type":"rovid"}
 ]'::jsonb);
 with w as (insert into worksheets (title) values ('Beadás') returning id) insert into ids select 'ws', id from w;
 reset role;

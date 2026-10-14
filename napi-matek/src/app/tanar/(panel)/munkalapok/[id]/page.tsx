@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireTeacher } from "@/lib/auth/guards";
 import { formatDateOnly, nextMonday, todayInBudapest } from "@/lib/schedule";
-import type { Topic } from "@/lib/tasks";
+import { loadTopics, topicIdsOf, topicNames } from "@/lib/topics";
 import { estimateMinutes, type TaskType } from "@/lib/task-types";
 import { Button, Notice } from "@/components/ui";
 import { deleteWorksheetAction } from "../actions";
@@ -25,7 +25,13 @@ interface ItemRow {
   position: number;
   week_no: number;
   day_no: number;
-  tasks: { id: string; title: string; difficulty: number; topic_id: number; archived_at: string | null };
+  tasks: {
+    id: string;
+    title: string;
+    difficulty: number;
+    archived_at: string | null;
+    task_topics: { topic_id: number }[];
+  };
 }
 
 interface AssignmentRow {
@@ -48,7 +54,7 @@ export default async function WorksheetPage({
   const keptCount = Number(revoked.megmaradt);
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 
-  const [worksheetRes, itemsRes, tasksRes, topicsRes, studentsRes, assignmentsRes] = await Promise.all([
+  const [worksheetRes, itemsRes, tasksRes, topics, studentsRes, assignmentsRes] = await Promise.all([
     supabase.from("worksheets").select("id, title, description, is_template").eq("id", id).maybeSingle<{
       id: string;
       title: string;
@@ -57,16 +63,16 @@ export default async function WorksheetPage({
     }>(),
     supabase
       .from("worksheet_items")
-      .select("id, position, week_no, day_no, tasks(id, title, difficulty, topic_id, archived_at)")
+      .select("id, position, week_no, day_no, tasks(id, title, difficulty, archived_at, task_topics(topic_id))")
       .eq("worksheet_id", id)
       .order("position"),
     supabase
       .from("tasks")
-      .select("id, title, difficulty, topic_id, task_type, est_minutes")
+      .select("id, title, difficulty, task_type, est_minutes, task_topics(topic_id)")
       .is("archived_at", null)
       .order("title")
       .limit(5000),
-    supabase.from("topics").select("id, slug, name").order("id"),
+    loadTopics(supabase),
     supabase.from("students").select("id, display_name").is("disabled_at", null).order("display_name"),
     supabase
       .from("assignments")
@@ -78,7 +84,6 @@ export default async function WorksheetPage({
   const worksheet = worksheetRes.data;
   if (!worksheet) notFound();
 
-  const topics = (topicsRes.data ?? []) as Topic[];
   const topicName = new Map(topics.map((t) => [t.id, t.name]));
 
   const items: EditorItem[] = ((itemsRes.data ?? []) as unknown as ItemRow[]).map((row) => ({
@@ -90,30 +95,30 @@ export default async function WorksheetPage({
       id: row.tasks.id,
       title: row.tasks.title,
       difficulty: row.tasks.difficulty,
-      topicName: topicName.get(row.tasks.topic_id) ?? "",
+      topicName: topicNames(topicIdsOf(row.tasks.task_topics, topics), topicName),
       archived: Boolean(row.tasks.archived_at),
     },
   }));
 
-  const pickerTasks: PickerTask[] = ((tasksRes.data ?? []) as {
+  const pickerTasks: PickerTask[] = ((tasksRes.data ?? []) as unknown as {
     id: string;
     title: string;
     difficulty: number;
-    topic_id: number;
     task_type: TaskType;
     est_minutes: number | null;
+    task_topics: { topic_id: number }[];
   }[]).map((t) => ({
     id: t.id,
     title: t.title,
     difficulty: t.difficulty,
-    topicId: t.topic_id,
+    topicIds: topicIdsOf(t.task_topics, topics),
     type: t.task_type,
     minutes: estimateMinutes(t.task_type, t.difficulty, t.est_minutes),
   }));
 
   // A generátorhoz: témakörönként hány aktív feladat van.
   const topicCounts = new Map<number, number>();
-  for (const t of pickerTasks) topicCounts.set(t.topicId, (topicCounts.get(t.topicId) ?? 0) + 1);
+  for (const t of pickerTasks) for (const id of t.topicIds) topicCounts.set(id, (topicCounts.get(id) ?? 0) + 1);
   const nextWeek = items.length ? Math.min(10, Math.max(...items.map((i) => i.week_no)) + 1) : 1;
 
   const students = ((studentsRes.data ?? []) as { id: string; display_name: string }[]).map((s) => ({

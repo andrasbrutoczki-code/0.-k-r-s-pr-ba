@@ -19,10 +19,10 @@ select create_student('00000000-0000-0000-0000-0000000000b1', 'Anna');
 -- Import: a helyes betű elmentődik, kisbetűt is elfogad; hibás betűre hiba.
 select _t(import_tasks(jsonb_build_array(
   jsonb_build_object('title', 'Teszt 1', 'body_md', 'Mennyi? (A) 1 (B) 2', 'topic_slug',
-    (select slug from topics order by id limit 1), 'difficulty', 2, 'task_type', 'teszt',
+    (select slug from topics where not retired order by sort_order limit 1), 'difficulty', 2, 'task_type', 'teszt',
     'requires_image', false, 'correct_choice', 'b'),
   jsonb_build_object('title', 'Teszt 2', 'body_md', 'Melyik? (A) x (B) y', 'topic_slug',
-    (select slug from topics order by id limit 1), 'difficulty', 2, 'task_type', 'teszt',
+    (select slug from topics where not retired order by sort_order limit 1), 'difficulty', 2, 'task_type', 'teszt',
     'requires_image', false, 'solution_md', 'Mert.'))) = 2, 'import: 2 tesztfeladat');
 select _t((select correct_choice from task_solutions s join tasks t on t.id = s.task_id where t.title = 'Teszt 1') = 'B',
           'a helyes betű nagybetűsítve elmentve, útmutató nélkül is');
@@ -30,7 +30,7 @@ select _t((select correct_choice is null from task_solutions s join tasks t on t
           'helyes betű nélkül is importálható');
 do $$ begin
   perform import_tasks(jsonb_build_array(jsonb_build_object('title', 'Rossz', 'body_md', 'x',
-    'topic_slug', (select slug from topics order by id limit 1), 'difficulty', 1, 'correct_choice', 'Q')));
+    'topic_slug', (select slug from topics where not retired order by sort_order limit 1), 'difficulty', 1, 'correct_choice', 'Q')));
   raise exception 'FAIL: hibás betű importálható';
 exception when raise_exception then
   if sqlerrm not like 'invalid_choice%' then raise; end if;

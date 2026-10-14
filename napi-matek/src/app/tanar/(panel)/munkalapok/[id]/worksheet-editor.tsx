@@ -32,7 +32,7 @@ export interface PickerTask {
   id: string;
   title: string;
   difficulty: number;
-  topicId: number;
+  topicIds: number[];
   type: TaskType;
   minutes: number;
 }
@@ -229,7 +229,7 @@ export function TaskPicker({
 
   const filtered = tasks.filter(
     (t) =>
-      (!topicId || String(t.topicId) === topicId) &&
+      (!topicId || t.topicIds.includes(Number(topicId))) &&
       (!type || t.type === type) &&
       (!difficulty || String(t.difficulty) === difficulty) &&
       (!query.trim() || t.title.toLowerCase().includes(query.trim().toLowerCase())),
@@ -282,7 +282,7 @@ export function TaskPicker({
             <span>
               <span className="font-bold">{task.title}</span>
               <span className="ml-2 text-sm text-muted">
-                {topicName.get(task.topicId)}, {TASK_TYPE_LABEL[task.type].toLowerCase()}, ~{task.minutes} perc
+                {task.topicIds.map((id) => topicName.get(id)).filter(Boolean).join(", ")}, {TASK_TYPE_LABEL[task.type].toLowerCase()}, ~{task.minutes} perc
               </span>
               {used.has(task.id) ? <span className="ml-2 text-sm text-ok">már a munkalapon</span> : null}
             </span>
@@ -661,7 +661,7 @@ export function WeekGenerator({
                       <span>
                         {t.title}
                         <span className="ml-1 text-muted">
-                          ({topicName.get(t.topicId)}, {TASK_TYPE_LABEL[t.type].toLowerCase()})
+                          ({t.topicIds.map((id) => topicName.get(id)).filter(Boolean).join(", ")}, {TASK_TYPE_LABEL[t.type].toLowerCase()})
                         </span>
                       </span>
                       <span className="flex shrink-0 items-center gap-2 text-muted">

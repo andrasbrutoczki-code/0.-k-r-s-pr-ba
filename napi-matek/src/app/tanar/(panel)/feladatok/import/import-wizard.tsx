@@ -189,7 +189,7 @@ export function ImportWizard({ topics, existingTitles }: { topics: TopicRef[]; e
                   </p>
                   {row.row ? (
                     <p className="text-sm text-muted">
-                      {topicName.get(row.row.topic_slug)}, {TASK_TYPE_LABEL[row.row.task_type].toLowerCase()}, nehézség{" "}
+                      {row.row.topic_slugs.map((slug) => topicName.get(slug)).join(", ")}, {TASK_TYPE_LABEL[row.row.task_type].toLowerCase()}, nehézség{" "}
                       {row.row.difficulty}, ~{estimateMinutes(row.row.task_type, row.row.difficulty, row.row.est_minutes)} perc
                       {row.row.requires_image ? ", fényképpel" : ""}
                       {row.row.figure ? `, ábra: ${row.row.figure}` : ""}

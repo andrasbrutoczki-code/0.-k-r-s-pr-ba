@@ -72,8 +72,20 @@ interface SummaryRow {
     task_type: TaskType;
     difficulty: number;
     est_minutes: number | null;
-    topics: { name: string } | null;
+    task_topics: TaskTopicRow[];
   } | null;
+}
+
+type TaskTopicRow = { topics: { name: string; sort_order: number; retired: boolean } | null };
+
+/** A feladat témakörei vesszővel, a témakörlista sorrendjében (visszavontak nélkül). */
+function topicLabel(rows: TaskTopicRow[] | undefined): string {
+  return (rows ?? [])
+    .map((r) => r.topics)
+    .filter((t): t is NonNullable<TaskTopicRow["topics"]> => !!t && !t.retired)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((t) => t.name)
+    .join(", ");
 }
 
 function toSummary(row: SummaryRow): TaskSummary {
@@ -87,7 +99,7 @@ function toSummary(row: SummaryRow): TaskSummary {
     title: task?.title ?? "Feladat",
     type: task?.task_type ?? "kifejtos",
     minutes: task ? estimateMinutes(task.task_type, task.difficulty, task.est_minutes) : 0,
-    topicName: task?.topics?.name ?? "",
+    topicName: topicLabel(task?.task_topics),
   };
 }
 
@@ -95,7 +107,7 @@ function toSummary(row: SummaryRow): TaskSummary {
 export async function loadTaskSummaries(supabase: Supabase): Promise<TaskSummary[]> {
   const { data } = await supabase
     .from("student_tasks")
-    .select("id, scheduled_date, due_date, status, is_late, tasks(title, task_type, difficulty, est_minutes, topics(name))")
+    .select("id, scheduled_date, due_date, status, is_late, tasks(title, task_type, difficulty, est_minutes, task_topics(topics(name, sort_order, retired)))")
     .order("scheduled_date", { ascending: false })
     .order("position")
     .limit(500);
@@ -133,7 +145,7 @@ export async function loadTaskDetails(supabase: Supabase, studentId: string, ids
     .from("student_tasks")
     .select(
       `id, scheduled_date, due_date, status, is_late,
-       tasks(title, task_type, difficulty, est_minutes, body_md, requires_image, figure_path, topics(name)),
+       tasks(title, task_type, difficulty, est_minutes, body_md, requires_image, figure_path, task_topics(topics(name, sort_order, retired))),
        submissions(id, version, submitted_at, choice, answer_text, submission_images(id, storage_path, position, created_at)),
        messages(id, author_id, body_md, created_at)`,
     )

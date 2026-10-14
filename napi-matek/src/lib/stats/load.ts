@@ -100,17 +100,11 @@ export async function loadStats(
   const ids = new Set([...daily.keys(), ...weekly.keys(), ...topics.keys()]);
   const result = new Map<string, StudentStats>();
   for (const id of ids) {
-    const studentTopics = topics.get(id) ?? [];
-    const totals = studentTopics.reduce((sum, t) => {
-      sum.assigned += t.assigned;
-      sum.submitted += t.submitted;
-      sum.accepted += t.accepted;
-      sum.needsRevision += t.needsRevision;
-      sum.late += t.late;
-      sum.testChecked += t.testChecked;
-      sum.testCorrect += t.testCorrect;
-      return sum;
-    }, emptyTotals());
+    // Egy feladat több témakörben is szerepelhet, ezért az összesítőt az
+    // adatbázis külön sorban (topic_id = 0) adja, minden feladatot egyszer számolva.
+    const rows = topics.get(id) ?? [];
+    const studentTopics = rows.filter((t) => t.topicId !== 0);
+    const totals = rows.find((t) => t.topicId === 0) ?? emptyTotals();
     const week = (weekly.get(id) ?? []).find((w) => w.week_start === thisMonday);
     result.set(id, {
       streak: computeStreak(daily.get(id) ?? [], weekly.get(id) ?? [], today),

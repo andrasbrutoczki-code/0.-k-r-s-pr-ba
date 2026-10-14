@@ -158,13 +158,13 @@ select _t((select count(*) from worksheet_items where worksheet_id = (select v f
 
 -- Import: atomikus, hibás témakörnél semmi sem kerül be.
 select _t(import_tasks('[
-  {"title":"I1","body_md":"$1+1$","topic_slug":"algebra","difficulty":1,"requires_image":false},
-  {"title":"I2","body_md":"$x$","topic_slug":"geometria","difficulty":5,"requires_image":true,"solution_md":"m"}
+  {"title":"I1","body_md":"$1+1$","topic_slug":"egyenletek","difficulty":1,"requires_image":false},
+  {"title":"I2","body_md":"$x$","topic_slug":"sikgeometria","difficulty":5,"requires_image":true,"solution_md":"m"}
 ]'::jsonb) = 2, 'import_tasks: 2 feladat beszúrva');
 select _t((select count(*) from task_solutions ts join tasks t on t.id = ts.task_id where t.title = 'I2') = 1,
           'import: a megoldási útmutató is bekerül');
 do $$ begin
-  perform import_tasks('[{"title":"I3","body_md":"x","topic_slug":"algebra","difficulty":2},
+  perform import_tasks('[{"title":"I3","body_md":"x","topic_slug":"egyenletek","difficulty":2},
                          {"title":"I4","body_md":"x","topic_slug":"nincs-ilyen","difficulty":2}]'::jsonb);
   raise exception 'FAIL: ismeretlen témakör elfogadva';
 exception when raise_exception then

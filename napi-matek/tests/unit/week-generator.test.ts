@@ -7,10 +7,10 @@ function makePool(): PoolTask[] {
   const pool: PoolTask[] = [];
   for (const topicId of [1, 2]) {
     for (let i = 0; i < 40; i++) {
-      pool.push({ id: `t${topicId}-${i}`, title: `T${i}`, topicId, difficulty: (i % 5) + 1, type: "teszt", estMinutes: null });
+      pool.push({ id: `t${topicId}-${i}`, title: `T${i}`, topicIds: [topicId], difficulty: (i % 5) + 1, type: "teszt", estMinutes: null });
     }
     for (let i = 0; i < 15; i++) {
-      pool.push({ id: `k${topicId}-${i}`, title: `K${i}`, topicId, difficulty: (i % 5) + 1, type: "kifejtos", estMinutes: null });
+      pool.push({ id: `k${topicId}-${i}`, title: `K${i}`, topicIds: [topicId], difficulty: (i % 5) + 1, type: "kifejtos", estMinutes: null });
     }
   }
   return pool;
@@ -93,5 +93,24 @@ describe("teszt válaszlehetőségei", () => {
     expect(choiceLetters("?\n(A) 1\n(B) 2\n(C) 3")).toEqual(["A", "B", "C"]);
     expect(choiceLetters("(E) x (A) y (D) z")).toEqual(["A", "D", "E"]);
     expect(choiceLetters("nincs")).toEqual(["A", "B", "C", "D"]);
+  });
+});
+
+describe("hétgenerátor, több témakör", () => {
+  it("a feladat bármelyik témaköre szerint választható", () => {
+    const pool = [
+      { id: "x", title: "Exp-log", topicIds: [5, 6], difficulty: 3, type: "kifejtos" as const, estMinutes: 10 },
+      { id: "y", title: "Más", topicIds: [7], difficulty: 3, type: "kifejtos" as const, estMinutes: 10 },
+    ];
+    const plan = planWeek(pool, {
+      topicIds: [6],
+      types: ["kifejtos"],
+      difficultyMin: 1,
+      difficultyMax: 5,
+      minutesPerDay: 25,
+      random: seededRandom(3),
+    });
+    const ids = plan.days.flatMap((d) => d.tasks.map((t) => t.taskId));
+    expect(ids).toEqual(["x"]);
   });
 });

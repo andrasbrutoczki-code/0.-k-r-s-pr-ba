@@ -20,7 +20,8 @@ import { estimateMinutes, type TaskType } from "./task-types.ts";
 export interface PoolTask {
   id: string;
   title: string;
-  topicId: number;
+  /** A feladat összes témaköre (egy feladat több témakörhöz is tartozhat). */
+  topicIds: number[];
   difficulty: number;
   type: TaskType;
   /** Megadott becsült idő (perc), vagy null → becslés típus és nehézség alapján. */
@@ -40,7 +41,7 @@ export interface GeneratorOptions {
 export interface PlannedTask {
   taskId: string;
   title: string;
-  topicId: number;
+  topicIds: number[];
   difficulty: number;
   type: TaskType;
   minutes: number;
@@ -73,7 +74,7 @@ function toPlanned(task: PoolTask): PlannedTask {
   return {
     taskId: task.id,
     title: task.title,
-    topicId: task.topicId,
+    topicIds: task.topicIds,
     difficulty: task.difficulty,
     type: task.type,
     minutes: estimateMinutes(task.type, task.difficulty, task.estMinutes),
@@ -119,7 +120,7 @@ export function planWeek(pool: PoolTask[], options: GeneratorOptions): WeekPlan 
   const eligible = shuffle(
     pool.filter(
       (t) =>
-        topicIds.includes(t.topicId) &&
+        t.topicIds.some((id) => topicIds.includes(id)) &&
         types.includes(t.type) &&
         t.difficulty >= difficultyMin &&
         t.difficulty <= difficultyMax,
@@ -138,8 +139,8 @@ export function planWeek(pool: PoolTask[], options: GeneratorOptions): WeekPlan 
   for (let dayNo = 1; dayNo <= 5; dayNo++) {
     const mainTopic = topicOrder[(dayNo - 1) % topicOrder.length];
     const ordered = [
-      ...interleaveByType(eligible.filter((t) => t.topicId === mainTopic), types, dayNo),
-      ...interleaveByType(eligible.filter((t) => t.topicId !== mainTopic), types, dayNo),
+      ...interleaveByType(eligible.filter((t) => mainTopic !== undefined && t.topicIds.includes(mainTopic)), types, dayNo),
+      ...interleaveByType(eligible.filter((t) => mainTopic === undefined || !t.topicIds.includes(mainTopic)), types, dayNo),
     ];
     const tasks = fillDay(ordered, minutesPerDay, used);
     days.push({ dayNo, tasks, minutes: tasks.reduce((s, t) => s + t.minutes, 0) });

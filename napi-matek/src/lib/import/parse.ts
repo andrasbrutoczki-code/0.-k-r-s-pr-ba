@@ -16,7 +16,8 @@ import {
  * hiszünk, de ugyanazokat a szabályokat alkalmazzuk).
  *
  * Mezők (a kulcsok kis- és nagybetű-, ékezet- és elválasztó-függetlenek):
- *   cim, szoveg, temakor, nehezseg (1–5),
+ *   cim, szoveg, temakor (egy vagy több, „|” vagy „;” jellel elválasztva,
+ *   JSON-ban tömb is lehet; az első az elsődleges), nehezseg (1–5),
  *   tipus (teszt / rovid / kifejtos; ha hiányzik, a szövegből következtetjük),
  *   ido_perc (becsült megoldási idő, 1–120; ha hiányzik, becsüljük),
  *   kep_kell (alapból: csak kifejtősnél igen),
@@ -37,7 +38,8 @@ export interface TopicRef {
 export interface ImportRow {
   title: string;
   body_md: string;
-  topic_slug: string;
+  /** Egy vagy több témakör; az első az elsődleges. */
+  topic_slugs: string[];
   difficulty: number;
   requires_image: boolean;
   task_type: TaskType;
@@ -206,10 +208,17 @@ export function validateRecord(
   else if (body.length > 20000) errors.push("A feladat szövege túl hosszú (max. 20 000 karakter).");
   else if (hasUnbalancedDollar(body)) warnings.push("A szövegben lezáratlan képlet ($) lehet.");
 
-  const topicInput = asText(fields.topic);
-  const topic = matchTopic(topicInput, options.topics);
-  if (!topicInput) errors.push("Hiányzik a témakör.");
-  else if (!topic) errors.push(`Ismeretlen témakör: „${topicInput}”.`);
+  // Több témakör: JSON-tömb, vagy „|” / „;” jellel elválasztva (a nevekben vessző is lehet).
+  const topicInputs = (Array.isArray(fields.topic) ? fields.topic.map(asText) : asText(fields.topic).split(/[|;]/))
+    .map((t) => t.trim())
+    .filter(Boolean);
+  const topicSlugs: string[] = [];
+  if (topicInputs.length === 0) errors.push("Hiányzik a témakör.");
+  for (const input of topicInputs) {
+    const match = matchTopic(input, options.topics);
+    if (!match) errors.push(`Ismeretlen témakör: „${input}”.`);
+    else if (!topicSlugs.includes(match.slug)) topicSlugs.push(match.slug);
+  }
 
   const difficultyText = asText(fields.difficulty);
   const difficulty = Number(difficultyText);
@@ -280,11 +289,11 @@ export function validateRecord(
   }
 
   const row: ImportRow | undefined =
-    errors.length === 0 && topic
+    errors.length === 0 && topicSlugs.length > 0
       ? {
           title,
           body_md: body,
-          topic_slug: topic.slug,
+          topic_slugs: topicSlugs,
           difficulty,
           requires_image: requiresImage,
           task_type: taskType,

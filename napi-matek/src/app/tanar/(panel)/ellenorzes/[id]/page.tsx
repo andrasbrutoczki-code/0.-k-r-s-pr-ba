@@ -33,7 +33,7 @@ interface ReviewRow {
     task_type: TaskType;
     difficulty: number;
     figure_path: string | null;
-    topics: { name: string } | null;
+    task_topics: { topics: { name: string; sort_order: number; retired: boolean } | null }[];
     task_solutions:
       | { solution_md: string; correct_choice: string | null }
       | { solution_md: string; correct_choice: string | null }[]
@@ -65,7 +65,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
     .select(
       `id, student_id, scheduled_date, due_date, status, is_late,
        students(display_name),
-       tasks(title, body_md, task_type, difficulty, figure_path, topics(name), task_solutions(solution_md, correct_choice)),
+       tasks(title, body_md, task_type, difficulty, figure_path, task_topics(topics(name, sort_order, retired)), task_solutions(solution_md, correct_choice)),
        submissions(id, version, submitted_at, choice, answer_text, submission_images(id, storage_path, position)),
        messages(id, author_id, body_md, created_at)`,
     )
@@ -130,7 +130,13 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
         <div className="flex flex-wrap items-center gap-3 text-sm text-muted">
           <StatusBadge status={row.status} audience="teacher" late={row.is_late} />
           <span>
-            {task.topics?.name}, {TASK_TYPE_LABEL[task.task_type].toLowerCase()}
+            {task.task_topics
+              .map((tt) => tt.topics)
+              .filter((t): t is NonNullable<typeof t> => !!t && !t.retired)
+              .sort((a, b) => a.sort_order - b.sort_order)
+              .map((t) => t.name)
+              .join(", ")}
+            , {TASK_TYPE_LABEL[task.task_type].toLowerCase()}
           </span>
           <Difficulty value={task.difficulty} />
           <span>

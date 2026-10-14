@@ -18,9 +18,9 @@ select _login('00000000-0000-0000-0000-0000000000c0');
 select create_student('00000000-0000-0000-0000-0000000000c1', 'Anna');
 select create_student('00000000-0000-0000-0000-0000000000c2', 'Bence');
 select import_tasks(jsonb_build_array(
-  jsonb_build_object('title', 'T1', 'body_md', '(A) 1 (B) 2', 'topic_slug', 'algebra', 'difficulty', 1,
+  jsonb_build_object('title', 'T1', 'body_md', '(A) 1 (B) 2', 'topic_slug', 'egyenletek', 'difficulty', 1,
                      'task_type', 'teszt', 'requires_image', false, 'correct_choice', 'B'),
-  jsonb_build_object('title', 'T2', 'body_md', '(A) 1 (B) 2', 'topic_slug', 'algebra', 'difficulty', 1,
+  jsonb_build_object('title', 'T2', 'body_md', '(A) 1 (B) 2', 'topic_slug', 'egyenletek', 'difficulty', 1,
                      'task_type', 'teszt', 'requires_image', false, 'correct_choice', 'A'),
   jsonb_build_object('title', 'K1', 'body_md', 'x', 'topic_slug', 'kombinatorika', 'difficulty', 2)));
 with w as (insert into worksheets (title) values ('Stat') returning id) insert into ids select 'ws', id from w;
@@ -69,7 +69,7 @@ select _t((select total = 3 and done_by_saturday = 3 from stats_weekly('00000000
 select _t((select total = 3 and done_by_saturday = 0 from stats_weekly('00000000-0000-0000-0000-0000000000c2')),
           'Bence vasárnapi beadása már nem számít a szombathoz');
 select _t((select assigned = 2 and submitted = 2 and test_checked = 2 and test_correct = 1
-             from stats_topics('00000000-0000-0000-0000-0000000000c1') where topic_name like 'Algebra%'),
+             from stats_topics('00000000-0000-0000-0000-0000000000c1') where topic_name like 'Egyenletek%'),
           'témakör: 2 teszt, 1 helyes (a tanár látja)');
 select _t((select count(distinct student_id) = 2 from stats_daily()), 'a tanár mindkét tanulót látja');
 
@@ -78,7 +78,7 @@ select _login('00000000-0000-0000-0000-0000000000c1', '11111111-0000-0000-0000-0
 select _t((select count(distinct student_id) = 1 from stats_daily()), 'tanuló: csak a saját napjai');
 select _t((select count(*) = 0 from stats_weekly('00000000-0000-0000-0000-0000000000c2')),
           'tanuló: más tanuló heti adata üres');
-select _t((select submitted = 2 and test_correct = 0 from stats_topics() where topic_name like 'Algebra%'),
+select _t((select submitted = 2 and test_correct = 0 from stats_topics() where topic_name like 'Egyenletek%'),
           'tanuló: a helyes válaszok nem szivárognak ki');
 reset role;
 

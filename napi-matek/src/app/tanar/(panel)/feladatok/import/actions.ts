@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireTeacher } from "@/lib/auth/guards";
+import { loadTopics } from "@/lib/topics";
 import { MAX_IMPORT_ROWS, validateRecord, type ImportRow, type TopicRef } from "@/lib/import/parse";
 
 export type ImportResult = { ok: true; count: number } | { ok: false; message: string };
@@ -22,13 +23,12 @@ export async function importTasksAction(rows: ImportRow[]): Promise<ImportResult
   if (!Array.isArray(rows) || rows.length === 0) return { ok: false, message: "Nincs importálható sor." };
   if (rows.length > MAX_IMPORT_ROWS) return { ok: false, message: `Legfeljebb ${MAX_IMPORT_ROWS} sor importálható.` };
 
-  const { data: topicData } = await supabase.from("topics").select("slug, name");
-  const topics = (topicData ?? []) as TopicRef[];
+  const topics: TopicRef[] = await loadTopics(supabase);
 
   const payload: {
     title: string;
     body_md: string;
-    topic_slug: string;
+    topic_slugs: string[];
     difficulty: number;
     requires_image: boolean;
     task_type: string;
@@ -47,7 +47,7 @@ export async function importTasksAction(rows: ImportRow[]): Promise<ImportResult
       {
         cim: row.title,
         szoveg: row.body_md,
-        temakor: row.topic_slug,
+        temakor: (row.topic_slugs ?? []).join("|"),
         nehezseg: row.difficulty,
         kep_kell: row.requires_image,
         tipus: row.task_type,
@@ -64,7 +64,7 @@ export async function importTasksAction(rows: ImportRow[]): Promise<ImportResult
     payload.push({
       title: checked.row.title,
       body_md: checked.row.body_md,
-      topic_slug: checked.row.topic_slug,
+      topic_slugs: checked.row.topic_slugs,
       difficulty: checked.row.difficulty,
       requires_image: checked.row.requires_image,
       task_type: checked.row.task_type,

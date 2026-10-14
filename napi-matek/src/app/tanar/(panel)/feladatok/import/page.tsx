@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireTeacher } from "@/lib/auth/guards";
-import { normalizeKey, type TopicRef } from "@/lib/import/parse";
+import { normalizeKey } from "@/lib/import/parse";
+import { loadTopics } from "@/lib/topics";
 import { ImportWizard } from "./import-wizard";
 
 export const metadata: Metadata = { title: "Feladatok importálása" };
@@ -14,11 +15,10 @@ const SAMPLES = [
 
 export default async function ImportPage() {
   const { supabase } = await requireTeacher();
-  const [{ data: topics }, { data: titles }] = await Promise.all([
-    supabase.from("topics").select("slug, name").order("id"),
+  const [topicList, { data: titles }] = await Promise.all([
+    loadTopics(supabase),
     supabase.from("tasks").select("title"),
   ]);
-  const topicList = (topics ?? []) as TopicRef[];
 
   return (
     <main className="space-y-6">
@@ -46,8 +46,11 @@ export default async function ImportPage() {
           <dd>a feladat szövege, képletek $…$ és $$…$$ között (kötelező)</dd>
           <dt className="font-bold">temakor</dt>
           <dd>
-            a témakör neve vagy rövid neve (kötelező):{" "}
-            <span className="text-muted">{topicList.map((t) => `${t.name} (${t.slug})`).join(", ")}</span>
+            egy vagy több témakör neve vagy rövid neve (kötelező). Több témakört „|” jellel válassz el (pl.{" "}
+            <code>logaritmus|exponencialis</code>), JSON-ban tömb is lehet; az első az elsődleges.{" "}
+            <span className="text-muted">
+              {topicList.map((t) => `${t.name} (${t.slug})`).join("; ")}
+            </span>
           </dd>
           <dt className="font-bold">nehezseg</dt>
           <dd>1–5 (kötelező)</dd>
