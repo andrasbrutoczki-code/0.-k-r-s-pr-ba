@@ -209,3 +209,25 @@ ezt bírja, és így a weboldal kiszolgálójától független.
 - Az összesítőket az adatbázis számolja (`stats_daily`, `stats_weekly`,
   `stats_topics`), RLS alatt: a tanuló csak a sajátját látja, a helyes válaszokat
   nem kapja meg.
+
+## Napi e-mail-összefoglaló
+
+Hétfőtől szombatig reggel 7-kor (budapesti idő) a tanár e-mailt kap: hány beadás
+vár ellenőrzésre (a legrégebbi 10 név szerint), olvasatlan üzenetek, ki nem adott
+be semmit az előző tanítási napon, és kinek van lejárt határidejű feladata.
+Megoldásokat és fotókat a levél nem tartalmaz.
+
+Működés: `pg_cron` → `send_daily_digest()` → Resend API (`pg_net`). Kód:
+`supabase/migrations/20261014000020_daily_digest.sql`, teszt: `11_daily_digest`.
+
+Beállítás:
+1. <https://resend.com> – regisztráció **a tanár e-mail-címével** (saját domain
+   nélkül az `onboarding@resend.dev` feladó csak erre a címre küld), API key.
+2. Supabase SQL Editor: `select vault.create_secret('re_…', 'resend_api_key');`
+3. Próbaküldés: `select public.send_daily_digest(true);` → `sent`.
+
+## AI-hozzájárulás tanulónként
+
+A Tanulók oldalon tanulónként rögzíthető a szülői hozzájárulás az AI-asszisztenshez
+(`students.ai_consent`, alapból nincs). Hozzájárulás nélkül az AI-javaslat nem kérhető;
+az Edge Function is ellenőrzi.

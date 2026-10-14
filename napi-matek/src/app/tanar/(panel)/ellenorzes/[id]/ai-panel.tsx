@@ -40,12 +40,15 @@ export function AiPanel({
   studentTaskId,
   initial,
   remaining,
+  allowed,
   onUseText,
 }: {
   studentTaskId: string;
   initial: AiReview | null;
   /** Ennyi javaslat kérhető még a legutóbbi beadott változatra. */
   remaining: number;
+  /** Van-e szülői hozzájárulás (Tanulók oldal). */
+  allowed: boolean;
   onUseText: (text: string) => void;
 }) {
   const router = useRouter();
@@ -83,11 +86,20 @@ export function AiPanel({
 
   const result = review?.result;
 
+  if (!allowed && !review) {
+    return (
+      <section className="rounded-md border border-rule bg-sheet p-3 text-sm text-muted" aria-label="AI-javaslat">
+        <strong className="text-ink">AI-asszisztens:</strong> ennél a tanulónál nincs rögzítve szülői hozzájárulás.
+        A Tanulók oldalon kapcsolható be.
+      </section>
+    );
+  }
+
   return (
     <section className="space-y-3 rounded-md border border-ink/30 bg-ink-soft p-3" aria-label="AI-javaslat">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-bold">AI-asszisztens</h3>
-        <Button type="button" variant="secondary" disabled={pending || left <= 0} onClick={request}>
+        <Button type="button" variant="secondary" disabled={pending || left <= 0 || !allowed} onClick={request}>
           {pending ? "Elemzés…" : review ? "Új javaslat kérése" : "AI-javaslat kérése"}
         </Button>
       </div>

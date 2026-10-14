@@ -26,7 +26,7 @@ interface ReviewRow {
   due_date: string;
   status: TaskStatus;
   is_late: boolean;
-  students: { display_name: string } | null;
+  students: { display_name: string; ai_consent: boolean } | null;
   tasks: {
     title: string;
     body_md: string;
@@ -64,7 +64,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
     .from("student_tasks")
     .select(
       `id, student_id, scheduled_date, due_date, status, is_late,
-       students(display_name),
+       students(display_name, ai_consent),
        tasks(title, body_md, task_type, difficulty, figure_path, task_topics(topics(name, sort_order, retired)), task_solutions(solution_md, correct_choice)),
        submissions(id, version, submitted_at, choice, answer_text, submission_images(id, storage_path, position)),
        messages(id, author_id, body_md, created_at)`,
@@ -235,6 +235,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
                 latestSubmission
                   ? {
                       initial: aiReviews[0] ?? null,
+                      allowed: Boolean(row.students?.ai_consent),
                       remaining: Math.max(0, MAX_AI_REVIEWS_PER_SUBMISSION - aiReviews.length),
                     }
                   : null

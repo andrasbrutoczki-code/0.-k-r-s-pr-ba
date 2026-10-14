@@ -47,7 +47,7 @@ export function ReviewPanel({
   /** A következő ellenőrzésre váró beadás (ha van). */
   nextId?: string;
   /** AI-javaslat a legutóbbi beadott változatra (null, ha nincs beadás). */
-  ai: { initial: AiReview | null; remaining: number } | null;
+  ai: { initial: AiReview | null; remaining: number; allowed: boolean } | null;
 }) {
   const router = useRouter();
   const fieldId = useId();
@@ -79,6 +79,7 @@ export function ReviewPanel({
           studentTaskId={id}
           initial={ai.initial}
           remaining={ai.remaining}
+          allowed={ai.allowed}
           onUseText={(t) => {
             setText(t);
             document.getElementById(fieldId)?.focus();

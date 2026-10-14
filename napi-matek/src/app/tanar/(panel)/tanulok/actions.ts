@@ -118,6 +118,18 @@ export async function setDisabledAction(formData: FormData): Promise<void> {
   revalidatePath("/tanar/tanulok");
 }
 
+/** Szülői hozzájárulás az AI-asszisztenshez (be/ki). */
+export async function setAiConsentAction(formData: FormData): Promise<void> {
+  const { supabase } = await requireTeacher();
+  const id = idSchema.safeParse(formData.get("studentId"));
+  if (!id.success) return;
+  await supabase
+    .from("students")
+    .update({ ai_consent: formData.get("consent") === "true" })
+    .eq("id", id.data);
+  revalidatePath("/tanar/tanulok");
+}
+
 export type DeleteResult = { status: "idle" } | { status: "error"; message: string };
 
 type AdminClient = ReturnType<typeof createAdminClient>;

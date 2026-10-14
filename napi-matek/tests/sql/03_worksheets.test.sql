@@ -131,6 +131,13 @@ exception when raise_exception then
   if sqlerrm <> 'sunday_not_allowed' then raise; end if;
   raise notice 'ok  - vasárnapra nem ütemezhető';
 end $$;
+do $$ begin
+  perform reschedule_student_task((select v from ids where k = 'st'), '2026-10-17');
+  raise exception 'FAIL: szombatra ütemezhető';
+exception when raise_exception then
+  if sqlerrm <> 'saturday_not_allowed' then raise; end if;
+  raise notice 'ok  - szombatra (pótlónap) nem ütemezhető';
+end $$;
 
 select swap_student_task((select v from ids where k = 'st'),
   (select id from tasks order by title desc limit 1));

@@ -72,6 +72,7 @@ async function loadImage(client: SupabaseClient, bucket: string, path: string): 
 
 interface Row {
   student_id: string;
+  students: { ai_consent: boolean } | null;
   tasks: {
     title: string;
     body_md: string;
@@ -123,7 +124,7 @@ Deno.serve(async (req) => {
   const { data, error } = await client
     .from("student_tasks")
     .select(
-      `student_id,
+      `student_id, students(ai_consent),
        tasks(title, body_md, task_type, figure_path, topics(name), task_solutions(solution_md, correct_choice)),
        submissions(id, version, submitted_at, choice, answer_text, submission_images(storage_path, position)),
        messages(author_id, body_md, created_at)`,
@@ -132,6 +133,9 @@ Deno.serve(async (req) => {
     .maybeSingle();
   const row = data as unknown as Row | null;
   if (error || !row?.tasks) return fail("not_found", "A feladat nem található.", 404);
+  if (!row.students?.ai_consent) {
+    return fail("no_consent", "Ennél a tanulónál nincs szülői hozzájárulás az AI-asszisztenshez.", 403);
+  }
 
   const latest = row.submissions.filter((s) => s.submitted_at).sort((a, b) => b.version - a.version)[0];
   if (!latest) return fail("nothing_submitted", "Ehhez a feladathoz még nincs beadás.", 400);

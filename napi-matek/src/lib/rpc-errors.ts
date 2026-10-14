@@ -15,6 +15,7 @@ const MESSAGES: Record<string, string> = {
   invalid_student: "A kiválasztott tanulók között letiltott vagy már nem létező is van.",
   task_archived: "Archivált feladat nem tehető munkalapra.",
   sunday_not_allowed: "Vasárnap szünnap, oda nem ütemezhető feladat.",
+  saturday_not_allowed: "Szombat pótlónap, oda nem ütemezhető új feladat.",
   due_before_date: "A határidő nem lehet korábbi a feladat napjánál.",
   not_reschedulable: "Ez a feladat már be van adva, ezért nem mozgatható.",
   not_swappable: "Csak még el nem kezdett, be nem adott feladat cserélhető.",
