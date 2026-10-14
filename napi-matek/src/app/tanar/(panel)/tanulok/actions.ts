@@ -118,7 +118,7 @@ export async function setDisabledAction(formData: FormData): Promise<void> {
   revalidatePath("/tanar/tanulok");
 }
 
-/** Szülői hozzájárulás az AI-asszisztenshez (be/ki). */
+/** A tanuló hozzájárulása az AI-asszisztenshez (be/ki). */
 export async function setAiConsentAction(formData: FormData): Promise<void> {
   const { supabase } = await requireTeacher();
   const id = idSchema.safeParse(formData.get("studentId"));

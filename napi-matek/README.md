@@ -48,7 +48,7 @@ beadással; tanári ellenőrzés tesztjavítással és AI-asszisztenssel; statis
 - AI-asszisztens: csak a tanár kérésére fut. A Claude API-nak a feladat, az
   útmutató, a beadás (szöveg és fotók) és az üzenetszál megy át, a tanuló neve
   nem. Az Anthropic az API-n beküldött adatokkal alapból nem tanít modellt; a
-  szülőket/tanulókat érdemes tájékoztatni arról, hogy a beadásokat egy
+  a tanulókat érdemes tájékoztatni arról, hogy a beadásokat egy
   AI-szolgáltatás is feldolgozhatja.
 
 ## Projektstruktúra
@@ -228,6 +228,6 @@ Beállítás:
 
 ## AI-hozzájárulás tanulónként
 
-A Tanulók oldalon tanulónként rögzíthető a szülői hozzájárulás az AI-asszisztenshez
+A Tanulók oldalon tanulónként rögzíthető a hozzájárulás az AI-asszisztenshez
 (`students.ai_consent`, alapból nincs). Hozzájárulás nélkül az AI-javaslat nem kérhető;
 az Edge Function is ellenőrzi.

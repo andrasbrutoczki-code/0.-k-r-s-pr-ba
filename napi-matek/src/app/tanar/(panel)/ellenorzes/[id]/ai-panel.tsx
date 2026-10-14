@@ -47,7 +47,7 @@ export function AiPanel({
   initial: AiReview | null;
   /** Ennyi javaslat kérhető még a legutóbbi beadott változatra. */
   remaining: number;
-  /** Van-e szülői hozzájárulás (Tanulók oldal). */
+  /** Van-e hozzájárulás (Tanulók oldal). */
   allowed: boolean;
   onUseText: (text: string) => void;
 }) {
@@ -89,7 +89,7 @@ export function AiPanel({
   if (!allowed && !review) {
     return (
       <section className="rounded-md border border-rule bg-sheet p-3 text-sm text-muted" aria-label="AI-javaslat">
-        <strong className="text-ink">AI-asszisztens:</strong> ennél a tanulónál nincs rögzítve szülői hozzájárulás.
+        <strong className="text-ink">AI-asszisztens:</strong> ennél a tanulónál nincs rögzítve hozzájárulás.
         A Tanulók oldalon kapcsolható be.
       </section>
     );

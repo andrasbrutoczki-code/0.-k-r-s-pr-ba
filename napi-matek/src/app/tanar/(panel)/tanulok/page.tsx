@@ -83,7 +83,7 @@ export default async function StudentsPage() {
                     <input type="hidden" name="studentId" value={student.id} />
                     <input type="hidden" name="consent" value={student.ai_consent ? "false" : "true"} />
                     <span className={student.ai_consent ? "text-ok" : "text-muted"}>
-                      AI-asszisztens: {student.ai_consent ? "szülői hozzájárulás megvan" : "nincs hozzájárulás"}
+                      AI-asszisztens: {student.ai_consent ? "hozzájárulás megvan" : "nincs hozzájárulás"}
                     </span>
                     <button className="min-h-10 font-bold text-ink underline-offset-4 hover:underline">
                       {student.ai_consent ? "Visszavonás" : "Hozzájárulás rögzítése"}
