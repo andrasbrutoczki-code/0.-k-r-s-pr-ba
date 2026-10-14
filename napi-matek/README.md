@@ -141,3 +141,11 @@ a hibás sorok kimaradnak, a hibátlanok egy tranzakcióban kerülnek be.
 JSON: `{ "feladatok": [ { "cim": …, … } ] }` vagy egyszerű tömb. CSV: fejléc a
 fenti mezőnevekkel, pontosvessző (magyar Excel) vagy vessző elválasztóval.
 Mintafájlok: `public/mintak/`.
+
+## Beadás feladattípusonként (a 3. lépés terve)
+
+| Típus | Beadás |
+|---|---|
+| Teszt | a válasz betűjele külön gombbal (A–D) + rövid szöveges indoklás; kép nem kell |
+| Rövid válasz | az eredmény szövegmezőbe írva |
+| Kifejtős | fénykép(ek) a levezetésről |
