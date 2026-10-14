@@ -3,10 +3,10 @@
 Gyakorlófelület emelt szintű matematika érettségire: a tanár feladatokat oszt ki,
 a tanulók naponta megoldják és fotóként beadják, a tanár visszajelzést ad.
 
-**Állapot:** az 1–2. lépés kész: belépés és tanulókezelés; feladatbank (KaTeX,
-ábra, tömeges import), munkalapok ütemezéssel, csoportos kiosztás és tanulónkénti
-módosítás. Következik: tanulói felület és fotós beadás → tanári ellenőrzés →
-statisztika.
+**Állapot:** mind az öt lépés kész: belépés és tanulókezelés; feladatbank (KaTeX,
+ábra, tömeges import), munkalapok, hétgenerátor és kiosztás; tanulói felület fotós
+beadással; tanári ellenőrzés tesztjavítással és AI-asszisztenssel; statisztika
+(sorozat, naptár, témakörök). Később: napi e-mail-összefoglaló.
 
 ## Technológia és döntések
 
@@ -43,7 +43,13 @@ statisztika.
   belépései, feladatai, feltöltött képei és üzenetei is törlődnek.
 - A betűtípus buildkor letöltődik és saját domainről megy ki: a böngésző nem
   kapcsolódik a Google-höz.
-- A képek (3. lépés) privát tárolóban lesznek, csak lejáró, aláírt URL-lel.
+- A képek privát tárolóban vannak, csak lejáró, aláírt URL-lel; az EXIF-adatok
+  (pl. GPS) a tömörítéskor elvesznek.
+- AI-asszisztens: csak a tanár kérésére fut. A Claude API-nak a feladat, az
+  útmutató, a beadás (szöveg és fotók) és az üzenetszál megy át, a tanuló neve
+  nem. Az Anthropic az API-n beküldött adatokkal alapból nem tanít modellt; a
+  szülőket/tanulókat érdemes tájékoztatni arról, hogy a beadásokat egy
+  AI-szolgáltatás is feldolgozhatja.
 
 ## Projektstruktúra
 
@@ -145,7 +151,7 @@ JSON: `{ "feladatok": [ { "cim": …, … } ] }` vagy egyszerű tömb. CSV: fejl
 fenti mezőnevekkel, pontosvessző (magyar Excel) vagy vessző elválasztóval.
 Mintafájlok: `public/mintak/`.
 
-## Beadás feladattípusonként (a 3. lépés terve)
+## Beadás feladattípusonként
 
 | Típus | Beadás |
 |---|---|
@@ -156,3 +162,40 @@ Mintafájlok: `public/mintak/`.
 **Szombat = pótlónap.** Munkalapra csak hétfőtől péntekig kerül feladat. Szombaton
 a tanuló a hét elmaradt feladatait pótolja; a szombat akkor számít a sorozatba, ha
 szombat végéig a hét minden feladata be van adva.
+
+## Ellenőrzés: tesztjavítás és AI-asszisztens
+
+**Tesztek automatikus javítása (AI nélkül).** A tesztfeladatoknál a tanár megadja
+a helyes betűt (szerkesztő, import: `helyes`). Az ellenőrzésnél a választás
+mellett ✓/✗ jelzés látszik, az áttekintő listában is.
+
+**AI-javaslat.** A beadás oldalán az „AI-javaslat kérése” gomb a
+`supabase/functions/ai-review` Edge Functiont hívja. Ez elolvassa a feladatot, az
+útmutatót, a tanuló válaszát/indoklását és a fotóit, majd döntést (elfogadás /
+javítás / bizonytalan), hibalistát és visszajelzés-tervezetet ad. A tanuló ebből
+semmit nem lát, amíg a tanár át nem veszi és el nem küldi. Beadott változatonként
+legfeljebb 3 javaslat kérhető.
+
+Beállítás:
+1. <https://console.anthropic.com> → API Keys → új kulcs (és egyenleg feltöltése).
+2. Supabase → Edge Functions → Secrets: `ANTHROPIC_API_KEY` = a kulcs.
+   Nem kötelező: `AI_REVIEW_MODEL` (alapból `claude-sonnet-5-5`).
+3. Telepítés (ha módosul): `supabase functions deploy ai-review`.
+
+Miért Edge Function? A Netlify ingyenes csomagjában a szerverfüggvény 10 mp után
+leáll, egy képes elemzés pedig tovább is tarthat.
+
+## Statisztika
+
+- **Sorozat:** hétfőtől péntekig az a nap számít, amikor a tanuló legalább egy
+  feladatot beadott (budapesti idő szerint); ha volt feladata, de nem adott be,
+  a sorozat megszakad. A szombat akkor számít, ha szombat estig a hét minden
+  feladata be van adva. A vasárnap és a feladat nélküli napok semlegesek; a mai
+  nap, amíg tart, nem szakít meg. Kód: `src/lib/stats/streak.ts` (egységtesztelt).
+- **Tanuló:** a kezdőlapon a sorozat, a „Statisztikám” oldalon 6 hetes naptár és
+  témakörönkénti táblázat.
+- **Tanár:** Statisztika menü – minden tanuló sorozata, heti haladása,
+  beadási aránya, késései és tesztpontossága; tanulónként részletes nézet.
+- Az összesítőket az adatbázis számolja (`stats_daily`, `stats_weekly`,
+  `stats_topics`), RLS alatt: a tanuló csak a sajátját látja, a helyes válaszokat
+  nem kapja meg.

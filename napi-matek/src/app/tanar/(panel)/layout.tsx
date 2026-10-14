@@ -12,6 +12,7 @@ const nav = [
   { href: "/tanar/tanulok", label: "Tanulók" },
   { href: "/tanar/feladatok", label: "Feladatbank" },
   { href: "/tanar/munkalapok", label: "Munkalapok" },
+  { href: "/tanar/statisztika", label: "Statisztika" },
   { href: "/tanar/biztatasok", label: "Biztató üzenetek" },
 ];
 

@@ -5,6 +5,7 @@ import { formatDayWithWeekday, isoWeekday, todayInBudapest } from "@/lib/schedul
 import { loadTaskDetails, loadTaskSummaries, type TaskSummary } from "@/lib/student/tasks";
 import { TASK_TYPE_LABEL } from "@/lib/task-types";
 import { StatusBadge } from "@/components/status-badge";
+import { loadStats } from "@/lib/stats/load";
 import { TaskCard } from "./task-card";
 
 export const metadata: Metadata = { title: "Mai feladat" };
@@ -44,7 +45,11 @@ export default async function StudentHome() {
   const today = todayInBudapest();
   const isSaturday = isoWeekday(today) === 6;
 
-  const summaries = await loadTaskSummaries(supabase);
+  const [summaries, statsByStudent] = await Promise.all([
+    loadTaskSummaries(supabase),
+    loadStats(supabase, today, user.id),
+  ]);
+  const streak = statsByStudent.get(user.id)?.streak;
   const todays = summaries.filter((t) => t.scheduledDate === today);
   const open = summaries.filter(
     (t) => t.scheduledDate < today && (t.status === "not_started" || t.status === "needs_revision"),
@@ -73,6 +78,20 @@ export default async function StudentHome() {
 
   return (
     <main className="space-y-8">
+      <Link
+        href="/tanulo/statisztika"
+        className="flex flex-wrap items-baseline justify-between gap-2 rounded-md border border-rule bg-sheet px-4 py-3 hover:border-ink"
+      >
+        <span>
+          <span className="text-2xl font-bold text-ink">{streak?.current ?? 0}</span>{" "}
+          <span className="font-bold">napos sorozat</span>
+          {streak && streak.best > streak.current ? (
+            <span className="ml-2 text-sm text-muted">(legjobb: {streak.best})</span>
+          ) : null}
+        </span>
+        <span className="text-sm font-bold text-ink">Statisztikám →</span>
+      </Link>
+
       <section aria-labelledby="today-title" className="space-y-4">
         <header>
           <h1 id="today-title" className="text-2xl font-bold">
