@@ -21,6 +21,7 @@ const topics = [
   ["logika", "Logika"],
   ["grafok", "Gráfok"],
   ["sikgeometria", "Síkgeometria"],
+  ["tergeometria", "Térgeometria"],
   ["sorozatok", "Sorozatok"],
   ["sorozat-hatarertek", "Sorozat határértéke"],
   ["statisztika", "Statisztika"],

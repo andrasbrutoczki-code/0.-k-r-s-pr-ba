@@ -109,7 +109,7 @@
     {
       "cim": "Forgáskúp",
       "szoveg": "Egy egyenes körkúp alapkörének sugara 6 cm, magassága 8 cm. Mekkora a kúp felszíne és térfogata?",
-      "temakor": "sikgeometria",
+      "temakor": "tergeometria",
       "nehezseg": 3,
       "kep_kell": true,
       "megoldasi_utmutato": "Alkotó: $a = 10$ cm. $A = r\\pi(r + a) = 96\\pi \\approx 301{,}6$ cm², $V = \\frac{r^2\\pi m}{3} = 96\\pi \\approx 301{,}6$ cm³."
