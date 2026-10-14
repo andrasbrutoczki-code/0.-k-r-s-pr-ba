@@ -27,6 +27,7 @@ const taskSchema = z.object({
   ]),
   body_md: z.string().trim().min(1, "Írd be a feladat szövegét.").max(20000),
   solution_md: z.string().trim().max(20000),
+  correct_choice: z.union([z.literal(""), z.string().regex(/^[A-F]$/, "A helyes válasz A–F betű.")]),
 });
 
 /** Valódi PNG-e (a fájlnév és a MIME-típus hamisítható, a fájl eleje nem). */
@@ -52,12 +53,15 @@ export async function saveTaskAction(_prev: SaveTaskState, formData: FormData): 
     est_minutes: String(formData.get("est_minutes") ?? "").trim(),
     body_md: formData.get("body_md") ?? "",
     solution_md: formData.get("solution_md") ?? "",
+    correct_choice: String(formData.get("correct_choice") ?? ""),
   });
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     return { status: "error", message: issue?.message ?? "Hibás adat.", field: issue?.path[0]?.toString() };
   }
-  const { id: existingId, solution_md, ...fields } = parsed.data;
+  const { id: existingId, solution_md, correct_choice, ...fields } = parsed.data;
+  // A helyes válasz csak tesztnél értelmes.
+  const choice = fields.task_type === "teszt" && correct_choice ? correct_choice : null;
 
   // Ábra ellenőrzése még a mentés előtt, hogy hibás fájlnál ne maradjon félkész feladat.
   const figure = formData.get("figure");
@@ -94,10 +98,13 @@ export async function saveTaskAction(_prev: SaveTaskState, formData: FormData): 
     id = data.id;
   }
 
-  // Megoldási útmutató: külön, csak tanár által olvasható táblában.
-  const solutionResult = solution_md
-    ? await supabase.from("task_solutions").upsert({ task_id: id, solution_md }, { onConflict: "task_id" })
-    : await supabase.from("task_solutions").delete().eq("task_id", id);
+  // Megoldási útmutató és helyes válasz: külön, csak tanár által olvasható táblában.
+  const solutionResult =
+    solution_md || choice
+      ? await supabase
+          .from("task_solutions")
+          .upsert({ task_id: id, solution_md, correct_choice: choice }, { onConflict: "task_id" })
+      : await supabase.from("task_solutions").delete().eq("task_id", id);
   if (solutionResult.error) return { status: "error", message: "Az útmutató mentése nem sikerült." };
 
   // Ábra: új feltöltése vagy a meglévő eltávolítása.

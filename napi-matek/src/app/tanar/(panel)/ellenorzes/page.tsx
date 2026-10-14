@@ -22,15 +22,38 @@ interface Row {
   is_late: boolean;
   last_submitted_at: string | null;
   students: { display_name: string } | null;
-  tasks: { title: string; task_type: TaskType } | null;
+  tasks: {
+    title: string;
+    task_type: TaskType;
+    task_solutions: { correct_choice: string | null } | { correct_choice: string | null }[] | null;
+  } | null;
   messages: { author_id: string; read_at: string | null }[];
+  submissions: { version: number; submitted_at: string | null; choice: string | null }[];
 }
 
 const SELECT =
-  "id, student_id, scheduled_date, due_date, status, is_late, last_submitted_at, students(display_name), tasks(title, task_type), messages(author_id, read_at)";
+  "id, student_id, scheduled_date, due_date, status, is_late, last_submitted_at, students(display_name), tasks(title, task_type, task_solutions(correct_choice)), messages(author_id, read_at), submissions(version, submitted_at, choice)";
 
 function unreadCount(row: Row): number {
   return row.messages.filter((m) => m.author_id === row.student_id && !m.read_at).length;
+}
+
+/** Tesztnél a legutóbbi beadott választás összevetése a helyes válasszal. */
+function ChoiceCheck({ row }: { row: Row }) {
+  if (row.tasks?.task_type !== "teszt") return null;
+  const solution = Array.isArray(row.tasks.task_solutions) ? row.tasks.task_solutions[0] : row.tasks.task_solutions;
+  const correct = solution?.correct_choice;
+  const latest = row.submissions
+    .filter((s) => s.submitted_at && s.choice)
+    .sort((a, b) => b.version - a.version)[0];
+  if (!correct || !latest?.choice) return null;
+  return latest.choice === correct ? (
+    <span className="ml-2 rounded bg-ok px-1.5 py-0.5 text-xs font-bold text-white">✓ {latest.choice}</span>
+  ) : (
+    <span className="ml-2 rounded bg-redpen px-1.5 py-0.5 text-xs font-bold text-white">
+      ✗ {latest.choice} (helyes: {correct})
+    </span>
+  );
 }
 
 function ReviewLink({ row, children }: { row: Row; children: React.ReactNode }) {
@@ -123,6 +146,7 @@ export default async function ReviewOverviewPage({ searchParams }: { searchParam
                     {row.tasks ? TASK_TYPE_LABEL[row.tasks.task_type].toLowerCase() : ""}
                     {unreadCount(row) ? `, ${unreadCount(row)} új üzenet` : ""}
                   </span>
+                  <ChoiceCheck row={row} />
                 </span>
                 <span className="text-sm text-muted">
                   beadva: {row.last_submitted_at ? formatDateTime(row.last_submitted_at) : "?"}

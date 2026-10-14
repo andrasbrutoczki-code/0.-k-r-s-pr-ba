@@ -31,7 +31,11 @@ export default async function EditTaskPage({
       .select("id, title, body_md, difficulty, requires_image, figure_path, archived_at, topic_id, task_type, est_minutes")
       .eq("id", id)
       .maybeSingle<TaskListItem>(),
-    supabase.from("task_solutions").select("solution_md").eq("task_id", id).maybeSingle<{ solution_md: string }>(),
+    supabase
+      .from("task_solutions")
+      .select("solution_md, correct_choice")
+      .eq("task_id", id)
+      .maybeSingle<{ solution_md: string; correct_choice: string | null }>(),
     supabase.from("topics").select("id, slug, name").order("id"),
   ]);
   if (!task) notFound();
@@ -79,6 +83,7 @@ export default async function EditTaskPage({
             est_minutes: task.est_minutes,
             body_md: task.body_md,
             solution_md: solution?.solution_md ?? "",
+            correct_choice: solution?.correct_choice ?? "",
           }}
           figureUrl={figureUrl}
           justSaved={mentve === "1"}

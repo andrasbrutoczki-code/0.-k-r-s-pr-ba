@@ -70,3 +70,21 @@ export function choiceLetters(body: string): string[] {
   const letters = [...found].sort();
   return letters.length >= 2 ? letters : ["A", "B", "C", "D"];
 }
+
+/**
+ * Helyes válasz betűjele tetszőleges beírt formából: „B”, „b”, „(B)”, „B)”.
+ * Érvénytelen bemenetre null.
+ */
+export function parseChoice(input: string): string | null {
+  const match = /^\(?\s*([A-Fa-f])\s*\)?\.?$/.exec(input.trim());
+  return match ? match[1]!.toUpperCase() : null;
+}
+
+/**
+ * A helyes válasz kiolvasása a megoldási útmutatóból, ha az
+ * „Helyes válasz: (B) …” formájú (a meglévő feladatbank így készült).
+ */
+export function extractCorrectChoice(solution: string): string | null {
+  const match = /helyes\s+v[áa]lasz\s*:?\s*\(?([A-F])\)/i.exec(solution);
+  return match ? match[1]!.toUpperCase() : null;
+}

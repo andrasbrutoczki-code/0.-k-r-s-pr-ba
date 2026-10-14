@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { MathText } from "@/components/math-text";
 import { Button, Notice } from "@/components/ui";
 import type { TaskStatus } from "@/lib/tasks";
+import { AiPanel, type AiReview } from "./ai-panel";
 import {
   decisionAction,
   openForReviewAction,
@@ -34,7 +35,16 @@ export function OpenOnMount({ id }: { id: string }) {
  *   Javítandó  – a tanuló új változatot adhat be
  *   Csak üzenet – döntés nélkül (állapot: Visszajelzés elküldve)
  */
-export function ReviewPanel({ id, status }: { id: string; status: TaskStatus }) {
+export function ReviewPanel({
+  id,
+  status,
+  ai,
+}: {
+  id: string;
+  status: TaskStatus;
+  /** AI-javaslat a legutóbbi beadott változatra (null, ha nincs beadás). */
+  ai: { initial: AiReview | null; remaining: number } | null;
+}) {
   const router = useRouter();
   const fieldId = useId();
   const [text, setText] = useState("");
@@ -59,6 +69,18 @@ export function ReviewPanel({ id, status }: { id: string; status: TaskStatus }) 
 
   return (
     <div className="space-y-3">
+      {ai ? (
+        <AiPanel
+          key={ai.initial?.id ?? "uj"}
+          studentTaskId={id}
+          initial={ai.initial}
+          remaining={ai.remaining}
+          onUseText={(t) => {
+            setText(t);
+            document.getElementById(fieldId)?.focus();
+          }}
+        />
+      ) : null}
       <label htmlFor={fieldId} className="block font-bold">
         Visszajelzés a tanulónak
       </label>

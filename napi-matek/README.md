@@ -65,7 +65,7 @@ src/
     supabase/           kliensek (felhasználói és titkos kulcsos)
   middleware.ts         munkamenet-frissítés
 supabase/migrations/    adatbázis séma és RPC-k, időrendben
-public/mintak/          import-mintafájlok (JSON 20 feladattal, CSV, ZIP ábrával)
+public/mintak/          import-mintafájlok (JSON 21 feladattal, köztük teszt; CSV; ZIP ábrával)
 scripts/seed.mjs        tanár + 3 tanuló létrehozása (az 5 mintafeladat migrációban van)
 scripts/test-db.sh      adatbázis-tesztek sima PostgreSQL-en
 tests/sql/              RLS- és üzleti szabály tesztek
@@ -136,7 +136,10 @@ a hibás sorok kimaradnak, a hibátlanok egy tranzakcióban kerülnek be.
 | `nehezseg` | igen | 1–5 |
 | `kep_kell` | nem | igen/nem: csak fényképpel adható-e be (alapból igen) |
 | `abra` | nem | PNG fájlnév, csak ZIP-csomagban |
+| `tipus` | nem | `teszt`, `rovid` vagy `kifejtos`; ha hiányzik, a szövegből következtetjük |
+| `ido_perc` | nem | becsült megoldási idő (1–120 perc) |
 | `megoldasi_utmutato` | nem | csak a tanár látja |
+| `helyes` | nem | tesztnél a helyes válasz betűje (A–F); hiányában az útmutató „Helyes válasz: (B)” kezdetéből |
 
 JSON: `{ "feladatok": [ { "cim": …, … } ] }` vagy egyszerű tömb. CSV: fejléc a
 fenti mezőnevekkel, pontosvessző (magyar Excel) vagy vessző elválasztóval.

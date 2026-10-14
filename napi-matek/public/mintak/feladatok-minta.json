@@ -159,6 +159,15 @@
       "nehezseg": 4,
       "kep_kell": true,
       "megoldasi_utmutato": "$f'(x) = \\frac{x^2 - 2x}{(x-1)^2}$, zérushelyek: $0$ és $2$. Előjelváltás alapján $x = 0$-ban lokális maximum: $f(0) = 0$; $x = 2$-ben lokális minimum: $f(2) = 4$."
+    },
+    {
+      "cim": "Szakaszok száma (teszt)",
+      "szoveg": "Hány szakaszt határoz meg 6 pont, ha semelyik három nincs egy egyenesen?\n\n(A) 12 (B) 15 (C) 30 (D) 36",
+      "temakor": "kombinatorika",
+      "nehezseg": 1,
+      "tipus": "teszt",
+      "helyes": "B",
+      "megoldasi_utmutato": "Bármely két pont egy szakaszt határoz meg: $\\binom{6}{2}=15$."
     }
   ]
 }

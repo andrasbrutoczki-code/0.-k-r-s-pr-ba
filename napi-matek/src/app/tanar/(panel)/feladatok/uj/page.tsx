@@ -30,6 +30,7 @@ export default async function NewTaskPage() {
             est_minutes: null,
             body_md: "",
             solution_md: "",
+            correct_choice: "",
           }}
           figureUrl={null}
           justSaved={false}

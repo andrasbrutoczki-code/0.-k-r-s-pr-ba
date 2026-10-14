@@ -32,10 +32,11 @@ describe("témakör-egyeztetés", () => {
 });
 
 describe("JSON import", () => {
-  it("a 20 feladatos mintafájl hibátlan", () => {
-    const text = readFileSync(new URL("../../public/mintak/feladatok-minta-20.json", import.meta.url), "utf8");
+  it("a JSON mintafájl hibátlan, a tesztfeladat helyes válasza átjön", () => {
+    const text = readFileSync(new URL("../../public/mintak/feladatok-minta.json", import.meta.url), "utf8");
     const rows = parseJsonImport(text, { topics });
-    expect(rows.length).toBe(20);
+    expect(rows.length).toBe(21);
+    expect(rows[20]!.row?.correct_choice).toBe("B");
     expect(rows.filter((r) => r.errors.length > 0).length).toBe(0);
     expect(rows.every((r) => r.row !== undefined)).toBe(true);
   });
@@ -92,6 +93,25 @@ describe("típus és idő az importban", () => {
     expect(rows[1]!.row?.requires_image).toBe(true);
     expect(rows[1]!.row?.est_minutes).toBe(15);
     expect(rows[2]!.errors.length).toBe(2);
+  });
+
+  it("helyes válasz: megadva, útmutatóból kiolvasva, hibás, nem teszthez", () => {
+    const rows = parseJsonImport(
+      JSON.stringify([
+        { cim: "A", szoveg: "(A) 1 (B) 2", temakor: "algebra", nehezseg: 1, helyes: "(b)" },
+        { cim: "B", szoveg: "(A) 1 (B) 2", temakor: "algebra", nehezseg: 1, megoldasi_utmutato: "Helyes válasz: (A) 1." },
+        { cim: "C", szoveg: "(A) 1 (B) 2", temakor: "algebra", nehezseg: 1, helyes: "X" },
+        { cim: "D", szoveg: "x", temakor: "algebra", nehezseg: 1, tipus: "kifejtos", helyes: "A" },
+        { cim: "E", szoveg: "(A) 1 (B) 2", temakor: "algebra", nehezseg: 1 },
+      ]),
+      { topics },
+    );
+    expect(rows[0]!.row?.correct_choice).toBe("B");
+    expect(rows[1]!.row?.correct_choice).toBe("A");
+    expect(rows[2]!.errors.length).toBe(1);
+    expect(rows[3]!.row?.correct_choice).toBeUndefined();
+    expect(rows[3]!.warnings.length).toBe(1);
+    expect(rows[4]!.warnings.some((w) => w.includes("Nincs helyes válasz"))).toBe(true);
   });
 });
 

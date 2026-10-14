@@ -35,6 +35,7 @@ export async function importTasksAction(rows: ImportRow[]): Promise<ImportResult
     est_minutes: number | null;
     figure_path: string | null;
     solution_md: string | null;
+    correct_choice: string | null;
   }[] = [];
   for (const [index, row] of rows.entries()) {
     const figurePath = row.figure ?? "";
@@ -52,6 +53,7 @@ export async function importTasksAction(rows: ImportRow[]): Promise<ImportResult
         tipus: row.task_type,
         ido_perc: row.est_minutes ?? "",
         megoldasi_utmutato: row.solution_md ?? "",
+        helyes: row.correct_choice ?? "",
       },
       index + 1,
       { topics },
@@ -69,6 +71,7 @@ export async function importTasksAction(rows: ImportRow[]): Promise<ImportResult
       est_minutes: checked.row.est_minutes ?? null,
       figure_path: figurePath || null,
       solution_md: checked.row.solution_md ?? null,
+      correct_choice: checked.row.correct_choice ?? null,
     });
   }
 

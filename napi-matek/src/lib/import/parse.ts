@@ -1,4 +1,12 @@
-import { defaultRequiresImage, inferTaskType, parseTaskType, type TaskType } from "../task-types.ts";
+import {
+  choiceLetters,
+  defaultRequiresImage,
+  extractCorrectChoice,
+  inferTaskType,
+  parseChoice,
+  parseTaskType,
+  type TaskType,
+} from "../task-types.ts";
 
 /**
  * Feladatok tömeges importja: JSON és CSV feldolgozása és soronkénti validálása.
@@ -12,7 +20,9 @@ import { defaultRequiresImage, inferTaskType, parseTaskType, type TaskType } fro
  *   tipus (teszt / rovid / kifejtos; ha hiányzik, a szövegből következtetjük),
  *   ido_perc (becsült megoldási idő, 1–120; ha hiányzik, becsüljük),
  *   kep_kell (alapból: csak kifejtősnél igen),
- *   abra (PNG fájlnév, csak ZIP-ben), megoldasi_utmutato
+ *   abra (PNG fájlnév, csak ZIP-ben), megoldasi_utmutato,
+ *   helyes (tesztnél a helyes válasz betűje; ha hiányzik, az útmutató
+ *   „Helyes válasz: (B)” kezdetéből olvassuk ki)
  * A `pontszam` mezőt elfogadjuk, de figyelmen kívül hagyjuk (nincs pontozás).
  */
 
@@ -35,6 +45,8 @@ export interface ImportRow {
   /** A ZIP-ben lévő ábrafájl neve (feltöltés előtt); a szerver már storage-útvonalat kap. */
   figure?: string;
   solution_md?: string;
+  /** Tesztnél a helyes válasz betűje (A–F). */
+  correct_choice?: string;
 }
 
 export interface ParsedRow {
@@ -91,6 +103,11 @@ const FIELD_ALIASES: Record<string, keyof RawFields> = {
   perc: "minutes",
   becsultido: "minutes",
   minutes: "minutes",
+  helyes: "correct",
+  helyesvalasz: "correct",
+  megoldasbetu: "correct",
+  correct: "correct",
+  correctchoice: "correct",
 };
 
 interface RawFields {
@@ -104,6 +121,7 @@ interface RawFields {
   points?: unknown;
   type?: unknown;
   minutes?: unknown;
+  correct?: unknown;
 }
 
 function mapFields(record: Record<string, unknown>): { fields: RawFields; unknown: string[] } {
@@ -235,6 +253,26 @@ export function validateRecord(
   const solution = asText(fields.solution);
   if (solution.length > 20000) errors.push("A megoldási útmutató túl hosszú (max. 20 000 karakter).");
 
+  // Helyes válasz: csak tesztnél értelmes; ha nincs megadva, az útmutatóból próbáljuk.
+  const correctText = asText(fields.correct);
+  let correct: string | null = null;
+  if (correctText) {
+    correct = parseChoice(correctText);
+    if (!correct) errors.push(`A helyes válasz egy betű legyen A és F között (most: „${correctText}”).`);
+    else if (taskType !== "teszt") {
+      warnings.push("A helyes válasz csak tesztfeladatnál számít, itt kihagyjuk.");
+      correct = null;
+    }
+  } else if (taskType === "teszt") {
+    correct = extractCorrectChoice(solution);
+  }
+  if (taskType === "teszt" && !correct && !correctText) {
+    warnings.push("Nincs helyes válasz megadva: a tanuló választását nem tudjuk automatikusan ellenőrizni.");
+  }
+  if (correct && taskType === "teszt" && !choiceLetters(body).includes(correct)) {
+    warnings.push(`A helyes válasz („${correct}”) nem szerepel a válaszlehetőségek között.`);
+  }
+
   if (asText(fields.points)) warnings.push("A pontszámot nem használjuk, figyelmen kívül hagyjuk.");
   if (unknown.length) warnings.push(`Ismeretlen mező(k), kihagyva: ${unknown.join(", ")}.`);
   if (title && options.existingTitles?.has(normalizeKey(title))) {
@@ -253,6 +291,7 @@ export function validateRecord(
           ...(minutesText ? { est_minutes: minutes } : {}),
           ...(figure ? { figure } : {}),
           ...(solution ? { solution_md: solution } : {}),
+          ...(correct ? { correct_choice: correct } : {}),
         }
       : undefined;
 

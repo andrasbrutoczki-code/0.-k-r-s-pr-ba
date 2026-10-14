@@ -11,10 +11,13 @@ import { StatusBadge } from "@/components/status-badge";
 import { Difficulty } from "@/components/ui";
 import { ImageViewer } from "./image-viewer";
 import { OpenOnMount, ReviewPanel } from "./review-panel";
+import type { AiReview } from "./ai-panel";
 
 export const metadata: Metadata = { title: "Ellenőrzés" };
 
 const SIGNED_URL_SECONDS = 60 * 60;
+/** Egyezik az Edge Function korlátjával (supabase/functions/ai-review). */
+const MAX_AI_REVIEWS_PER_SUBMISSION = 3;
 
 interface ReviewRow {
   id: string;
@@ -31,7 +34,10 @@ interface ReviewRow {
     difficulty: number;
     figure_path: string | null;
     topics: { name: string } | null;
-    task_solutions: { solution_md: string } | { solution_md: string }[] | null;
+    task_solutions:
+      | { solution_md: string; correct_choice: string | null }
+      | { solution_md: string; correct_choice: string | null }[]
+      | null;
   } | null;
   submissions: {
     id: string;
@@ -59,7 +65,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
     .select(
       `id, student_id, scheduled_date, due_date, status, is_late,
        students(display_name),
-       tasks(title, body_md, task_type, difficulty, figure_path, topics(name), task_solutions(solution_md)),
+       tasks(title, body_md, task_type, difficulty, figure_path, topics(name), task_solutions(solution_md, correct_choice)),
        submissions(id, version, submitted_at, choice, answer_text, submission_images(id, storage_path, position)),
        messages(id, author_id, body_md, created_at)`,
     )
@@ -71,7 +77,8 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
 
   const submitted = row.submissions.filter((s) => s.submitted_at).sort((a, b) => b.version - a.version);
   const imagePaths = submitted.flatMap((s) => s.submission_images.map((i) => i.storage_path));
-  const [imageSigned, figureSigned, nextRes] = await Promise.all([
+  const latestSubmission = submitted[0];
+  const [imageSigned, figureSigned, nextRes, aiRes] = await Promise.all([
     imagePaths.length
       ? supabase.storage.from("submissions").createSignedUrls(imagePaths, SIGNED_URL_SECONDS)
       : Promise.resolve({ data: [] as { path: string | null; signedUrl: string }[] }),
@@ -86,7 +93,15 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
       .order("last_submitted_at", { ascending: true })
       .limit(1)
       .maybeSingle<{ id: string }>(),
+    latestSubmission
+      ? supabase
+          .from("ai_reviews")
+          .select("id, created_at, model, result")
+          .eq("submission_id", latestSubmission.id)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
   ]);
+  const aiReviews = (aiRes.data ?? []) as AiReview[];
   const urlByPath = new Map((imageSigned.data ?? []).map((d) => [d.path, d.signedUrl] as const));
   const figureUrl = figureSigned.data?.signedUrl ?? null;
   const solution = Array.isArray(task.task_solutions) ? task.task_solutions[0] : task.task_solutions;
@@ -132,10 +147,15 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
             // eslint-disable-next-line @next/next/no-img-element -- lejáró aláírt URL
             <img src={figureUrl} alt="A feladat ábrája" className="max-h-80 rounded-md border border-rule bg-white" />
           ) : null}
-          {solution?.solution_md ? (
+          {solution?.solution_md || solution?.correct_choice ? (
             <details open className="border-t border-rule pt-3">
               <summary className="cursor-pointer font-bold text-redpen">Megoldási útmutató</summary>
-              <MathText source={solution.solution_md} className="mt-2" />
+              {solution.correct_choice ? (
+                <p className="mt-2">
+                  Helyes válasz: <strong>{solution.correct_choice}</strong>
+                </p>
+              ) : null}
+              {solution.solution_md ? <MathText source={solution.solution_md} className="mt-2" /> : null}
             </details>
           ) : null}
         </section>
@@ -152,8 +172,19 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
               const body = (
                 <div className="space-y-3">
                   {version.choice ? (
-                    <p>
+                    <p className="flex flex-wrap items-center gap-2">
                       Választott válasz: <strong className="text-2xl">{version.choice}</strong>
+                      {solution?.correct_choice ? (
+                        version.choice === solution.correct_choice ? (
+                          <span className="rounded bg-ok px-2 py-0.5 text-sm font-bold text-white">✓ helyes</span>
+                        ) : (
+                          <span className="rounded bg-redpen px-2 py-0.5 text-sm font-bold text-white">
+                            ✗ hibás, a helyes válasz: {solution.correct_choice}
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-sm text-muted">(a feladatnál nincs megadva helyes válasz)</span>
+                      )}
                     </p>
                   ) : null}
                   {version.answer_text ? (
@@ -189,7 +220,18 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
           )}
 
           <div className="border-t border-rule pt-4">
-            <ReviewPanel id={row.id} status={row.status} />
+            <ReviewPanel
+              id={row.id}
+              status={row.status}
+              ai={
+                latestSubmission
+                  ? {
+                      initial: aiReviews[0] ?? null,
+                      remaining: Math.max(0, MAX_AI_REVIEWS_PER_SUBMISSION - aiReviews.length),
+                    }
+                  : null
+              }
+            />
           </div>
         </section>
       </div>

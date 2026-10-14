@@ -7,7 +7,7 @@ import { ImportWizard } from "./import-wizard";
 export const metadata: Metadata = { title: "Feladatok importálása" };
 
 const SAMPLES = [
-  { href: "/mintak/feladatok-minta-20.json", label: "JSON minta (20 feladat)" },
+  { href: "/mintak/feladatok-minta.json", label: "JSON minta (21 feladat, köztük egy teszt)" },
   { href: "/mintak/feladatok-minta.csv", label: "CSV minta (pontosvesszős)" },
   { href: "/mintak/feladatok-minta-abraval.zip", label: "ZIP minta ábrával" },
 ];
@@ -61,6 +61,11 @@ export default async function ImportPage() {
           <dd>PNG fájlnév; csak ZIP-csomagban, a JSON/CSV mellé téve</dd>
           <dt className="font-bold">megoldasi_utmutato</dt>
           <dd>csak a tanár látja (nem kötelező)</dd>
+          <dt className="font-bold">helyes</dt>
+          <dd>
+            tesztnél a helyes válasz betűje (A–F); ebből javítjuk automatikusan a tanuló választását. Ha hiányzik, az
+            útmutató „Helyes válasz: (B) …” kezdetéből olvassuk ki.
+          </dd>
         </dl>
         <p className="text-sm text-muted">A „pontszam” mezőt elfogadjuk, de nem használjuk.</p>
         <ul className="flex flex-wrap gap-x-6 gap-y-2">

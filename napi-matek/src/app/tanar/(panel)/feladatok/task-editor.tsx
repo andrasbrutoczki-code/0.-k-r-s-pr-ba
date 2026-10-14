@@ -8,6 +8,7 @@ import type { Topic } from "@/lib/tasks";
 import {
   TASK_TYPES,
   TASK_TYPE_LABEL,
+  choiceLetters,
   defaultRequiresImage,
   estimateMinutes,
   type TaskType,
@@ -23,6 +24,8 @@ export interface TaskEditorValues {
   est_minutes: number | null;
   body_md: string;
   solution_md: string;
+  /** Tesztnél a helyes válasz betűje; "" = nincs megadva. */
+  correct_choice: string;
 }
 
 const initialState: SaveTaskState = { status: "idle" };
@@ -92,6 +95,7 @@ export function TaskEditor({
   const [minutes, setMinutes] = useState(initial.est_minutes ? String(initial.est_minutes) : "");
   const [body, setBody] = useState(initial.body_md);
   const [solution, setSolution] = useState(initial.solution_md);
+  const [correct, setCorrect] = useState(initial.correct_choice);
   const [preview, setPreview] = useState<string | null>(null);
   const [removeFigure, setRemoveFigure] = useState(false);
 
@@ -260,6 +264,45 @@ export function TaskEditor({
           </label>
         ) : null}
       </div>
+
+      {taskType === "teszt" ? (
+        <fieldset>
+          <legend className="mb-1.5 font-bold">Helyes válasz (csak te látod)</legend>
+          <div className="flex flex-wrap gap-1">
+            {[...new Set([...choiceLetters(body), ...(correct ? [correct] : [])])].sort().map((letter) => (
+              <label
+                key={letter}
+                className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-md border border-rule bg-sheet text-lg font-bold has-[:checked]:border-ok has-[:checked]:bg-ok has-[:checked]:text-white"
+              >
+                <input
+                  type="radio"
+                  name="correct_choice"
+                  value={letter}
+                  checked={correct === letter}
+                  onChange={() => setCorrect(letter)}
+                  className="sr-only"
+                />
+                {letter}
+              </label>
+            ))}
+            <label className="flex h-12 cursor-pointer items-center rounded-md border border-rule bg-sheet px-3 text-sm has-[:checked]:border-ink has-[:checked]:bg-ink-soft">
+              <input
+                type="radio"
+                name="correct_choice"
+                value=""
+                checked={correct === ""}
+                onChange={() => setCorrect("")}
+                className="sr-only"
+              />
+              Nincs megadva
+            </label>
+          </div>
+          <p className="mt-1 text-sm text-muted">
+            Ebből jelzi a rendszer az ellenőrzésnél, hogy a tanuló jól választott-e. A betűk a szöveg (A), (B)…
+            jelöléseiből jönnek.
+          </p>
+        </fieldset>
+      ) : null}
 
       <MathField
         id="solution_md"
