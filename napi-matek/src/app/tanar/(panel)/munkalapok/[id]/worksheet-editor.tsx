@@ -10,6 +10,7 @@ import {
   duplicateWorksheetAction,
   moveItemAction,
   removeItemAction,
+  removeItemsAction,
   updateItemSlotAction,
   updateWorksheetAction,
   type ActionResult,
@@ -102,6 +103,10 @@ export function WorksheetMetaForm({ id, title, description }: { id: string; titl
 
 export function ItemsEditor({ worksheetId, items }: { worksheetId: string; items: EditorItem[] }) {
   const { pending, error, run } = useServerAction();
+  // Kijelölés a több tétel egyszerre törléséhez (megerősítéssel).
+  const [selected, setSelected] = useState<string[]>([]);
+  const [confirming, setConfirming] = useState(false);
+  const live = selected.filter((id) => items.some((i) => i.id === id));
 
   if (items.length === 0) {
     return <p className="text-muted">A munkalap még üres. Adj hozzá feladatokat a feladatbankból (lent).</p>;
@@ -110,12 +115,64 @@ export function ItemsEditor({ worksheetId, items }: { worksheetId: string; items
   return (
     <div className="space-y-3">
       {error ? <Notice tone="error">{error}</Notice> : null}
+      <div className="flex flex-wrap items-center gap-3 rounded-md border border-rule bg-paper px-3 py-2 text-sm">
+        <label className="flex min-h-10 cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            className="h-5 w-5"
+            checked={live.length === items.length}
+            onChange={(e) => setSelected(e.target.checked ? items.map((i) => i.id) : [])}
+          />
+          Mind kijelölése
+        </label>
+        <span className="text-muted">{live.length} kijelölve</span>
+        {live.length > 0 && !confirming ? (
+          <Button type="button" variant="danger" className="min-h-10 px-3" onClick={() => setConfirming(true)}>
+            Kijelöltek törlése a munkalapról
+          </Button>
+        ) : null}
+        {confirming && live.length > 0 ? (
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="font-bold text-redpen">{live.length} feladat kikerül a munkalapról. A már kiosztott feladatok megmaradnak.</span>
+            <Button
+              type="button"
+              variant="danger"
+              className="min-h-10 px-3"
+              disabled={pending}
+              onClick={() =>
+                run(async () => {
+                  const r = await removeItemsAction(worksheetId, live);
+                  if (r.ok) {
+                    setSelected([]);
+                    setConfirming(false);
+                  }
+                  return r;
+                })
+              }
+            >
+              Igen, törlöm
+            </Button>
+            <Button type="button" variant="secondary" className="min-h-10 px-3" onClick={() => setConfirming(false)}>
+              Mégse
+            </Button>
+          </span>
+        ) : null}
+      </div>
       <ol className={`space-y-2 ${pending ? "opacity-60" : ""}`} aria-busy={pending}>
         {items.map((item, index) => (
           <li key={item.id} className="rounded-md border border-rule bg-sheet p-3">
             <div className="flex flex-wrap items-start justify-between gap-2">
-              <p className="font-bold">
-                <span className="mr-2 text-muted">{index + 1}.</span>
+              <p className="flex items-start gap-2 font-bold">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-5 w-5 shrink-0"
+                  aria-label={`${item.task.title}: kijelölés`}
+                  checked={live.includes(item.id)}
+                  onChange={() =>
+                    setSelected((ids) => (ids.includes(item.id) ? ids.filter((x) => x !== item.id) : [...ids, item.id]))
+                  }
+                />
+                <span className="text-muted">{index + 1}.</span>
                 {item.task.title}
                 {item.task.archived ? <span className="ml-2 text-sm text-redpen">(archivált)</span> : null}
               </p>
@@ -194,7 +251,7 @@ export function ItemsEditor({ worksheetId, items }: { worksheetId: string; items
                   disabled={pending}
                   onClick={() => run(() => removeItemAction(worksheetId, item.id))}
                 >
-                  Eltávolítás
+                  Törlés
                 </Button>
               </div>
             </div>
@@ -672,6 +729,34 @@ export function WeekGenerator({
                       </div>
                       <span className="flex shrink-0 items-center gap-2 text-muted">
                         <Difficulty value={t.difficulty} /> {t.minutes}′
+                        <button
+                          type="button"
+                          className="min-h-8 px-1 font-bold text-redpen"
+                          aria-label={`${t.title}: kivétel a javaslatból`}
+                          title="Kivétel a javaslatból"
+                          onClick={() =>
+                            setPlan((p) =>
+                              p
+                                ? {
+                                    ...p,
+                                    plan: {
+                                      ...p.plan,
+                                      days: p.plan.days.map((d) =>
+                                        d.dayNo !== day.dayNo
+                                          ? d
+                                          : (() => {
+                                              const tasks = d.tasks.filter((x) => x.taskId !== t.taskId);
+                                              return { ...d, tasks, minutes: tasks.reduce((m, x) => m + x.minutes, 0) };
+                                            })(),
+                                      ),
+                                    },
+                                  }
+                                : p,
+                            )
+                          }
+                        >
+                          ×
+                        </button>
                       </span>
                     </li>
                   ))}

@@ -112,6 +112,21 @@ export async function removeItemAction(worksheetId: string, itemId: string): Pro
   return { ok: true };
 }
 
+/** Több tétel törlése egyszerre a munkalapról (a kiosztott feladatokat nem érinti). */
+export async function removeItemsAction(worksheetId: string, itemIds: string[]): Promise<ActionResult> {
+  const { supabase } = await requireTeacher();
+  const ids = z.array(uuid).min(1).max(500).safeParse(itemIds);
+  if (!ids.success || !uuid.safeParse(worksheetId).success) return { ok: false, message: "Hibás azonosító." };
+  const { error } = await supabase
+    .from("worksheet_items")
+    .delete()
+    .eq("worksheet_id", worksheetId)
+    .in("id", ids.data);
+  if (error) return { ok: false, message: "A tételek nem távolíthatók el." };
+  revalidateWorksheet(worksheetId);
+  return { ok: true };
+}
+
 const slotSchema = z.object({
   week: z.number().int().min(1).max(20),
   day: z.number().int().min(1).max(5),
