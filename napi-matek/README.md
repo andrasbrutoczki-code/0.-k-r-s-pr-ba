@@ -148,7 +148,7 @@ a hibás sorok kimaradnak, a hibátlanok egy tranzakcióban kerülnek be.
 |---|---|---|
 | `cim` | igen | a feladat címe |
 | `szoveg` | igen | a feladat szövege; képlet `$…$`, kiemelt képlet `$$…$$`, dollárjel `\$` |
-| `temakor` | igen | egy vagy több témakör neve vagy rövid neve, `|` jellel elválasztva (pl. `logaritmus|exponencialis`); JSON-ban tömb is lehet; az első az elsődleges |
+| `temakor` | igen | egy vagy több témakör neve vagy rövid neve, `\|` jellel elválasztva (pl. `logaritmus\|exponencialis`); JSON-ban tömb is lehet; az első az elsődleges |
 | `nehezseg` | igen | 1–5 |
 | `kep_kell` | nem | igen/nem: csak fényképpel adható-e be (alapból igen) |
 | `abra` | nem | PNG fájlnév, csak ZIP-csomagban |
