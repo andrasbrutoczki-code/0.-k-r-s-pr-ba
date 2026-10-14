@@ -1,5 +1,5 @@
 /**
- * Ütemezési segédfüggvények: a gyakorlási hét (H–Szo) és a dátum-csak
+ * Ütemezési segédfüggvények: a gyakorlási hét (H–P, szombat pótlónap) és a dátum-csak
  * („YYYY-MM-DD”) értékek kezelése. Függőség nélküli, tesztelhető kód.
  *
  * A „YYYY-MM-DD” értékeket naptári napként kezeljük, nem időpontként: a
@@ -7,8 +7,11 @@
  * csúsztathatja el a napot.
  */
 
-/** A gyakorlási hét napjai (1 = hétfő … 6 = szombat). Vasárnap szünnap. */
-export const PRACTICE_DAYS = ["hétfő", "kedd", "szerda", "csütörtök", "péntek", "szombat"] as const;
+/**
+ * A munkalapra ütemezhető napok (1 = hétfő … 5 = péntek). A szombat pótlónap:
+ * új feladat nem kerül rá, a tanuló a hét elmaradt feladatait pótolja.
+ */
+export const PRACTICE_DAYS = ["hétfő", "kedd", "szerda", "csütörtök", "péntek"] as const;
 
 /** „1. hét, kedd” */
 export function describeSlot(weekNo: number, dayNo: number): string {
@@ -53,12 +56,17 @@ export function nextMonday(today: string): string {
   return weekday === 1 ? today : addDays(today, 8 - weekday);
 }
 
-/** d + n gyakorlási nap (H–Szo), a vasárnapokat átugorva – ugyanaz, mint az SQL _add_practice_days. */
-export function addPracticeDays(value: string, n: number): string {
-  const offset = isoWeekday(value) - 1; // 0 = hétfő … 5 = szombat
-  const monday = addDays(value, -offset);
+/**
+ * d + n tanítási nap (H–P), a hétvégéket átugorva – ugyanaz, mint az SQL
+ * _add_school_days. Hétvégi d esetén a következő hétfőtől számol.
+ */
+export function addSchoolDays(value: string, n: number): string {
+  const weekday = isoWeekday(value);
+  const base = weekday === 6 ? addDays(value, 2) : weekday === 7 ? addDays(value, 1) : value;
+  const offset = isoWeekday(base) - 1; // 0 = hétfő … 4 = péntek
+  const monday = addDays(base, -offset);
   const total = offset + n;
-  return addDays(monday, 7 * Math.floor(total / 6) + (total % 6));
+  return addDays(monday, 7 * Math.floor(total / 5) + (total % 5));
 }
 
 /**
@@ -66,7 +74,7 @@ export function addPracticeDays(value: string, n: number): string {
  * Az 1. hét hétfője a kezdőnapra esik; hétfői kezdésnél a napnevek egyeznek.
  */
 export function scheduledDate(start: string, weekNo: number, dayNo: number): string {
-  return addPracticeDays(start, 6 * (weekNo - 1) + (dayNo - 1));
+  return addSchoolDays(start, 5 * (weekNo - 1) + (dayNo - 1));
 }
 
 const dateOnlyFmt = new Intl.DateTimeFormat("hu-HU", {

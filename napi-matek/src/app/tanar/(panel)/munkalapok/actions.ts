@@ -114,7 +114,7 @@ export async function removeItemAction(worksheetId: string, itemId: string): Pro
 
 const slotSchema = z.object({
   week: z.number().int().min(1).max(20),
-  day: z.number().int().min(1).max(6),
+  day: z.number().int().min(1).max(5),
 });
 
 export async function updateItemSlotAction(
@@ -179,7 +179,6 @@ const generatorSchema = z.object({
   difficultyMin: z.number().int().min(1).max(5),
   difficultyMax: z.number().int().min(1).max(5),
   minutesPerDay: z.number().int().min(5).max(120),
-  saturdayReview: z.boolean(),
   onlyUnassigned: z.boolean(),
   seed: z.number().int(),
 });
@@ -244,7 +243,7 @@ export async function applyWeekAction(
     .object({
       worksheetId: uuid,
       weekNo: z.number().int().min(1).max(20),
-      items: z.array(z.object({ taskId: uuid, dayNo: z.number().int().min(1).max(6) })).min(1),
+      items: z.array(z.object({ taskId: uuid, dayNo: z.number().int().min(1).max(5) })).min(1),
     })
     .safeParse({ worksheetId, weekNo, items });
   if (!parsed.success) return { ok: false, message: "Hibás javaslat." };

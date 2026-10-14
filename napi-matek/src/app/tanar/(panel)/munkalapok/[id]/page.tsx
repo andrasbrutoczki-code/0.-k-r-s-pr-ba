@@ -139,8 +139,8 @@ export default async function WorksheetPage({ params }: { params: Promise<{ id: 
           Feladatok és ütemezés
         </h2>
         <p className="text-sm text-muted">
-          A nap a kiosztás kezdőnapjához képest értendő (hétfői kezdésnél a napnevek egyeznek). Szombat az ismétlés
-          és pótlás napja, vasárnap szünnap.
+          A nap a kiosztás kezdőnapjához képest értendő (hétfői kezdésnél a napnevek egyeznek). Feladat csak
+          hétfőtől péntekig kerül ki: a szombat a hét elmaradt feladatainak pótlónapja, vasárnap szünnap.
           Egy napra több feladat is kerülhet.
         </p>
         <ItemsEditor worksheetId={worksheet.id} items={items} />
@@ -178,7 +178,7 @@ export default async function WorksheetPage({ params }: { params: Promise<{ id: 
           Hét összeállítása automatikusan
         </h2>
         <p className="text-sm text-muted">
-          A generátor minden hétköznapra a napi időkeretnyi feladatot javasol a kiválasztott témakörökből, nehézségi
+          A generátor hétfőtől péntekig minden napra a napi időkeretnyi feladatot javasol a kiválasztott témakörökből, nehézségi
           sávból és típusokból; a témakörök napról napra forognak. Előbb megnézed a javaslatot, és csak a
           jóváhagyás után kerül a munkalapra.
         </p>

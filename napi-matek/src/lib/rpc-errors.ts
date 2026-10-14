@@ -5,6 +5,7 @@
 const MESSAGES: Record<string, string> = {
   start_not_monday: "A kiosztás kezdőnapja csak hétfő lehet.",
   start_is_sunday: "Vasárnap szünnap, a kiosztás nem indulhat vasárnap.",
+  start_missing: "Adj meg egy kezdőnapot.",
   no_students: "Válassz legalább egy tanulót.",
   empty_worksheet: "A munkalap üres. Előbb adj hozzá feladatot.",
   archived_task: "A munkalapon archivált feladat van. Cseréld le kiosztás előtt.",

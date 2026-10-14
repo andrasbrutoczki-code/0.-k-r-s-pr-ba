@@ -22,7 +22,7 @@ select create_student('00000000-0000-0000-0000-0000000000a2', 'Bence');
 select create_student('00000000-0000-0000-0000-0000000000a3', 'Csenge');
 select create_student('00000000-0000-0000-0000-0000000000a4', 'Dani');
 
--- Munkalap 7 tétellel: az alapértelmezett ütemezés H, K, Sze, Cs, P, Szo, majd 2. hét H.
+-- Munkalap 7 tétellel: az alapértelmezett ütemezés H, K, Sze, Cs, P, majd 2. hét H, K.
 create temp table ids (k text primary key, v uuid);
 grant all on ids to authenticated;
 with w as (insert into worksheets (title) values ('1. hét') returning id) insert into ids select 'ws', id from w;
@@ -39,8 +39,8 @@ end $$;
 select _t(
   (select array_agg(week_no::text || '/' || day_no::text order by position)
      from worksheet_items where worksheet_id = (select v from ids where k = 'ws'))
-  = array['1/1','1/2','1/3','1/4','1/5','1/6','2/1'],
-  'add_worksheet_item: H→Szo után a következő hét hétfője');
+  = array['1/1','1/2','1/3','1/4','1/5','2/1','2/2'],
+  'add_worksheet_item: péntek után a következő hét hétfője (szombat pótlónap)');
 
 -- Sorrendcsere: a 2. tétel felkerül az 1. helyre.
 select move_worksheet_item(
@@ -53,16 +53,7 @@ select move_worksheet_item(
   (select id from worksheet_items where worksheet_id = (select v from ids where k = 'ws') and position = 1), -1);
 select _t(true, 'move_worksheet_item: az első tétel felfelé mozgatása nem hiba');
 
--- Kiosztás: egy művelet, 3 tanuló. Vasárnapi kezdés nem lehet.
-do $$ begin
-  perform assign_worksheet((select v from ids where k = 'ws'), '2026-10-18',
-    array['00000000-0000-0000-0000-0000000000a1']::uuid[]);
-  raise exception 'FAIL: vasárnapi kezdőnap elfogadva';
-exception when raise_exception then
-  if sqlerrm <> 'start_is_sunday' then raise; end if;
-  raise notice 'ok  - vasárnapra nem eshet a kezdőnap';
-end $$;
-
+-- Kiosztás: egy művelet, 3 tanuló.
 insert into ids values ('as', assign_worksheet((select v from ids where k = 'ws'), '2026-10-12',
   array['00000000-0000-0000-0000-0000000000a1','00000000-0000-0000-0000-0000000000a2',
         '00000000-0000-0000-0000-0000000000a3']::uuid[]));
@@ -75,26 +66,33 @@ select _t(
   (select array_agg(distinct scheduled_date::text || '>' || due_date::text order by scheduled_date::text || '>' || due_date::text)
      from student_tasks where assignment_id = (select v from ids where k = 'as'))
   = array['2026-10-12>2026-10-18','2026-10-13>2026-10-18','2026-10-14>2026-10-18',
-          '2026-10-15>2026-10-18','2026-10-16>2026-10-18','2026-10-17>2026-10-18',
-          '2026-10-19>2026-10-25'],
-  'ütemezés: H–Szo az 1. héten (határidő vasárnap), a 7. tétel a 2. hét hétfője');
+          '2026-10-15>2026-10-18','2026-10-16>2026-10-18',
+          '2026-10-19>2026-10-25','2026-10-20>2026-10-25'],
+  'ütemezés: H–P, szombatra nem kerül feladat; határidő az adott hét vasárnapja');
 
--- Szerdai kezdés: a tételek gyakorlási napokban tolódnak, vasárnap kimarad.
+-- Szerdai kezdés: tanítási napokban tolódik, a hétvége kimarad.
 insert into ids values ('as_wed', assign_worksheet((select v from ids where k = 'ws'), '2026-10-14',
   array['00000000-0000-0000-0000-0000000000a1']::uuid[]));
 select _t(
   (select array_agg(scheduled_date::text || '>' || due_date::text order by scheduled_date)
      from student_tasks where assignment_id = (select v from ids where k = 'as_wed'))
   = array['2026-10-14>2026-10-18','2026-10-15>2026-10-18','2026-10-16>2026-10-18',
-          '2026-10-17>2026-10-18','2026-10-19>2026-10-25','2026-10-20>2026-10-25',
-          '2026-10-21>2026-10-25'],
-  'szerdai kezdés: Sze, Cs, P, Szo, majd H, K, Sze; határidő az adott hét vasárnapja');
-select _t((select bool_and(extract(isodow from scheduled_date) <> 7) from student_tasks),
-          'egyetlen feladat sem esik vasárnapra');
+          '2026-10-19>2026-10-25','2026-10-20>2026-10-25','2026-10-21>2026-10-25',
+          '2026-10-22>2026-10-25'],
+  'szerdai kezdés: Sze, Cs, P, majd H–Cs; határidő az adott hét vasárnapja');
+
+-- Szombati kezdés (pl. hétvégi teszteléshez): az első feladat a következő hétfő.
+insert into ids values ('as_sat', assign_worksheet((select v from ids where k = 'ws'), '2026-10-17',
+  array['00000000-0000-0000-0000-0000000000a2']::uuid[]));
+select _t((select min(scheduled_date) = '2026-10-19' from student_tasks
+            where assignment_id = (select v from ids where k = 'as_sat')),
+          'hétvégi kezdőnap: az első feladat a következő hétfő');
+select _t((select bool_and(extract(isodow from scheduled_date) between 1 and 5) from student_tasks),
+          'egyetlen kiosztott feladat sem esik hétvégére');
 reset role;
-select _t(_add_practice_days('2026-10-12', 0) = '2026-10-12' and _add_practice_days('2026-10-12', 6) = '2026-10-19'
-          and _add_practice_days('2026-10-17', 1) = '2026-10-19',
-          '_add_practice_days: hétfőtől 6 nap = következő hétfő, szombat után hétfő');
+select _t(_add_school_days('2026-10-12', 0) = '2026-10-12' and _add_school_days('2026-10-12', 5) = '2026-10-19'
+          and _add_school_days('2026-10-16', 1) = '2026-10-19' and _add_school_days('2026-10-18', 0) = '2026-10-19',
+          '_add_school_days: péntek után hétfő, vasárnapról hétfő');
 set local role authenticated;
 select _login('00000000-0000-0000-0000-0000000000a0');
 
@@ -110,7 +108,7 @@ exception when raise_exception then
 end $$;
 
 -- A munkalap későbbi szerkesztése nem írja át a kiosztást.
-update worksheet_items set day_no = 6 where worksheet_id = (select v from ids where k = 'ws');
+update worksheet_items set day_no = 5 where worksheet_id = (select v from ids where k = 'ws');
 select _t((select count(*) from student_tasks
             where assignment_id = (select v from ids where k = 'as') and scheduled_date = '2026-10-12') = 3,
           'a munkalap utólagos módosítása nem változtatja a kiosztott ütemezést');

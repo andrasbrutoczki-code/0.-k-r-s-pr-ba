@@ -155,9 +155,13 @@ export function ItemsEditor({ worksheetId, items }: { worksheetId: string; items
                   {PRACTICE_DAYS.map((name, i) => (
                     <option key={name} value={i + 1}>
                       {name}
-                      {i === 5 ? " (ismétlés)" : ""}
                     </option>
                   ))}
+                  {item.day_no === 6 ? (
+                    <option value={6} disabled>
+                      szombat (pótlónap, válassz másik napot)
+                    </option>
+                  ) : null}
                 </Select>
               </label>
               <div className="ml-auto flex gap-1">
@@ -350,8 +354,9 @@ export function AssignPanel({
   const [start, setStart] = useState(defaultStart);
   const [selected, setSelected] = useState<string[]>([]);
 
-  const startValid = /^\d{4}-\d{2}-\d{2}$/.test(start) && isoWeekday(start) !== 7;
+  const startValid = /^\d{4}-\d{2}-\d{2}$/.test(start);
   const startIsMonday = startValid && isoWeekday(start) === 1;
+  const startIsWeekend = startValid && isoWeekday(start) >= 6;
   const lastItem = items.reduce<EditorItem | null>(
     (latest, item) =>
       !latest || item.week_no * 10 + item.day_no > latest.week_no * 10 + latest.day_no ? item : latest,
@@ -407,12 +412,12 @@ export function AssignPanel({
         htmlFor="start_date"
         hint={
           startValid && lastItem
-            ? `Első feladat: ${formatDayWithWeekday(start)}, utolsó: ${formatDayWithWeekday(
+            ? `Első feladat: ${formatDayWithWeekday(scheduledDate(start, 1, 1))}, utolsó: ${formatDayWithWeekday(
                 scheduledDate(start, lastItem.week_no, lastItem.day_no),
-              )}. A határidő mindig az adott hét vasárnapja.${
-                startIsMonday ? "" : " Nem hétfői kezdésnél a feladatok gyakorlási napokban tolódnak (vasárnap kimarad)."
-              }`
-            : "Bármely nap lehet, kivéve vasárnap. A határidő mindig az adott hét vasárnapja."
+              )}. A határidő mindig az adott hét vasárnapja, a szombat pótlónap.${
+                startIsMonday ? "" : " Nem hétfői kezdésnél a feladatok tanítási napokban tolódnak (a hétvége kimarad)."
+              }${startIsWeekend ? " Hétvégi kezdőnapnál az első feladat a következő hétfő." : ""}`
+            : "Bármely nap lehet. Feladat csak hétfőtől péntekig kerül ki; a szombat pótlónap."
         }
       >
         <Input
@@ -425,7 +430,6 @@ export function AssignPanel({
           className="w-52"
         />
       </Field>
-      {!startValid && start ? <Notice tone="warning">Vasárnap szünnap, válassz másik kezdőnapot.</Notice> : null}
 
       {state.status === "error" ? <Notice tone="error">{state.message}</Notice> : null}
       {state.status === "done" ? (
@@ -449,7 +453,7 @@ export function AssignPanel({
 // -----------------------------------------------------------------------------
 
 /**
- * Javaslat egy teljes hétre (H–P + szombati ismétlés) témakör, nehézség,
+ * Javaslat egy teljes hétre (hétfő–péntek) témakör, nehézség,
  * típus és napi időkeret alapján. Előbb előnézet, újrakérhető („Új javaslat”),
  * és csak jóváhagyás után kerül a munkalapra.
  */
@@ -466,7 +470,6 @@ export function WeekGenerator({
   const [types, setTypes] = useState<TaskType[]>(["teszt", "kifejtos"]);
   const [range, setRange] = useState({ min: 1, max: 3 });
   const [minutesPerDay, setMinutesPerDay] = useState(30);
-  const [saturdayReview, setSaturdayReview] = useState(true);
   const [onlyUnassigned, setOnlyUnassigned] = useState(true);
   const [weekNo, setWeekNo] = useState(defaultWeek);
   const [plan, setPlan] = useState<{ plan: WeekPlan; poolSize: number } | null>(null);
@@ -486,7 +489,6 @@ export function WeekGenerator({
         difficultyMin: range.min,
         difficultyMax: range.max,
         minutesPerDay,
-        saturdayReview,
         onlyUnassigned,
         seed: Math.floor(Math.random() * 2 ** 31),
       });
@@ -619,10 +621,6 @@ export function WeekGenerator({
 
       <div className="flex flex-wrap gap-x-8 gap-y-2">
         <label className="flex min-h-12 items-center gap-2">
-          <input type="checkbox" checked={saturdayReview} onChange={(e) => setSaturdayReview(e.target.checked)} className="h-5 w-5" />
-          Szombat: ismétlés a hét témaköreiből (könnyebb feladatok)
-        </label>
-        <label className="flex min-h-12 items-center gap-2">
           <input type="checkbox" checked={onlyUnassigned} onChange={(e) => setOnlyUnassigned(e.target.checked)} className="h-5 w-5" />
           Csak még ki nem osztott feladatok
         </label>
@@ -651,7 +649,6 @@ export function WeekGenerator({
                 <p className="flex justify-between font-bold">
                   <span>
                     {PRACTICE_DAYS[day.dayNo - 1]}
-                    {day.dayNo === 6 ? " (ismétlés)" : ""}
                   </span>
                   <span className={day.minutes > minutesPerDay + 5 || day.minutes < minutesPerDay * 0.7 ? "text-redpen" : "text-muted"}>
                     ~{day.minutes} perc

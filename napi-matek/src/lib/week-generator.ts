@@ -1,5 +1,5 @@
 /**
- * Hétgenerátor: egy gyakorlási hét (H–P + szombati ismétlés) feladatsorának
+ * Hétgenerátor: egy gyakorlási hét (hétfő–péntek) feladatsorának
  * javaslata a feladatbankból, időkeret alapján.
  *
  * Tiszta függvény (a véletlenszám-forrás paraméter), így determinisztikusan
@@ -11,7 +11,7 @@
  *     utána a többiből, így a hét változatos, de egy-egy nap fókuszált.
  *   - Ha több típus van kiválasztva, egy napon belül váltakoznak (pl. teszt, kifejtős, teszt).
  *   - Egy feladat a héten legfeljebb egyszer szerepel.
- *   - Szombat (ha kérik): ismétlés a hét témaköreiből, a kért nehézségi sáv alsó feléből.
+ *   - Szombatra nem kerül feladat: az a hét elmaradt feladatainak pótlónapja.
  *   - Ha kevés a feladat, a nap rövidebb lesz – erről figyelmeztetést adunk.
  */
 
@@ -33,7 +33,6 @@ export interface GeneratorOptions {
   difficultyMin: number;
   difficultyMax: number;
   minutesPerDay: number;
-  saturdayReview: boolean;
   /** 0 ≤ random() < 1 */
   random: () => number;
 }
@@ -48,7 +47,7 @@ export interface PlannedTask {
 }
 
 export interface PlannedDay {
-  dayNo: number; // 1 = hétfő … 6 = szombat
+  dayNo: number; // 1 = hétfő … 5 = péntek
   tasks: PlannedTask[];
   minutes: number;
 }
@@ -146,22 +145,8 @@ export function planWeek(pool: PoolTask[], options: GeneratorOptions): WeekPlan 
     days.push({ dayNo, tasks, minutes: tasks.reduce((s, t) => s + t.minutes, 0) });
   }
 
-  if (options.saturdayReview) {
-    // Ismétlés: a hét témaköreiből, a nehézségi sáv alsó feléből, még nem használt feladatokkal.
-    const weekTopics = new Set(days.flatMap((d) => d.tasks.map((t) => t.topicId)));
-    const reviewMax = Math.max(difficultyMin, Math.floor((difficultyMin + difficultyMax) / 2));
-    const reviewPool = interleaveByType(
-      eligible.filter((t) => weekTopics.has(t.topicId) && t.difficulty <= reviewMax),
-      types,
-      6,
-    );
-    const tasks = fillDay(reviewPool, minutesPerDay, used);
-    days.push({ dayNo: 6, tasks, minutes: tasks.reduce((s, t) => s + t.minutes, 0) });
-    if (tasks.length === 0) warnings.push("Szombatra nem maradt könnyebb, még nem használt feladat ezekből a témakörökből.");
-  }
-
   const short = days.filter((d) => d.tasks.length > 0 && d.minutes < minutesPerDay * 0.7);
-  const empty = days.filter((d) => d.tasks.length === 0 && d.dayNo <= 5);
+  const empty = days.filter((d) => d.tasks.length === 0);
   if (empty.length > 0) {
     warnings.push(`Elfogyott a feladat: ${empty.length} hétköznapra nem jutott feladat. Bővítsd a témaköröket, típusokat vagy a nehézségi sávot.`);
   } else if (short.length > 0) {

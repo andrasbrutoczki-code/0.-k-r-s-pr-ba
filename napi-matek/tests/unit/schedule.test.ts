@@ -23,17 +23,18 @@ describe("ütemezés", () => {
     expect(nextMonday("2027-02-26")).toBe("2027-03-01");
   });
 
-  it("ugyanúgy számol, mint az adatbázis", () => {
+  it("ugyanúgy számol, mint az adatbázis (H–P, szombat pótlónap)", () => {
     expect(scheduledDate("2026-10-12", 1, 1)).toBe("2026-10-12");
-    expect(scheduledDate("2026-10-12", 1, 6)).toBe("2026-10-17");
+    expect(scheduledDate("2026-10-12", 1, 5)).toBe("2026-10-16");
     expect(scheduledDate("2026-10-12", 2, 1)).toBe("2026-10-19");
   });
 
-  it("bármely napon induló kiosztás: vasárnap kimarad", () => {
+  it("bármely napon induló kiosztás: a hétvége kimarad", () => {
     expect(scheduledDate("2026-10-14", 1, 1)).toBe("2026-10-14"); // szerda
-    expect(scheduledDate("2026-10-14", 1, 4)).toBe("2026-10-17"); // szombat
-    expect(scheduledDate("2026-10-14", 1, 5)).toBe("2026-10-19"); // hétfő
-    expect(scheduledDate("2026-10-17", 1, 2)).toBe("2026-10-19"); // szombat → hétfő
+    expect(scheduledDate("2026-10-14", 1, 3)).toBe("2026-10-16"); // péntek
+    expect(scheduledDate("2026-10-14", 1, 4)).toBe("2026-10-19"); // hétfő
+    expect(scheduledDate("2026-10-17", 1, 1)).toBe("2026-10-19"); // szombati kezdés → hétfő
+    expect(scheduledDate("2026-10-18", 1, 2)).toBe("2026-10-20"); // vasárnapi kezdés → kedd
   });
 
   it("magyar megjelenítés", () => {

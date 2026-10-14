@@ -149,3 +149,7 @@ Mintafájlok: `public/mintak/`.
 | Teszt | a válasz betűjele külön gombbal (A–D) + rövid szöveges indoklás; kép nem kell |
 | Rövid válasz | az eredmény szövegmezőbe írva |
 | Kifejtős | fénykép(ek) a levezetésről |
+
+**Szombat = pótlónap.** Munkalapra csak hétfőtől péntekig kerül feladat. Szombaton
+a tanuló a hét elmaradt feladatait pótolja; a szombat akkor számít a sorozatba, ha
+szombat végéig a hét minden feladata be van adva.

@@ -22,7 +22,6 @@ const base = {
   difficultyMin: 1,
   difficultyMax: 3,
   minutesPerDay: 30,
-  saturdayReview: true,
 };
 
 describe("típusok és időbecslés", () => {
@@ -45,9 +44,9 @@ describe("típusok és időbecslés", () => {
 });
 
 describe("hétgenerátor", () => {
-  it("H–P minden napra jut feladat, a keret (+5 perc) nem lépi túl, szombat ismétlés", () => {
+  it("H–P minden napra jut feladat, a keret (+5 perc) nem lépi túl, szombatra nem tesz", () => {
     const plan = planWeek(makePool(), { ...base, types: [...base.types], random: seededRandom(1) });
-    expect(plan.days.map((d) => d.dayNo)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(plan.days.map((d) => d.dayNo)).toEqual([1, 2, 3, 4, 5]);
     for (const day of plan.days) {
       expect(day.tasks.length > 0).toBe(true);
       expect(day.minutes <= 35).toBe(true);
@@ -61,12 +60,6 @@ describe("hétgenerátor", () => {
     const all = plan.days.flatMap((d) => d.tasks);
     expect(new Set(all.map((t) => t.taskId)).size).toBe(all.length);
     expect(all.every((t) => t.difficulty >= 1 && t.difficulty <= 3)).toBe(true);
-  });
-
-  it("szombaton csak a sáv alsó feléből (könnyebb) választ", () => {
-    const plan = planWeek(makePool(), { ...base, types: [...base.types], difficultyMax: 5, random: seededRandom(3) });
-    const saturday = plan.days.find((d) => d.dayNo === 6)!;
-    expect(saturday.tasks.every((t) => t.difficulty <= 3)).toBe(true);
   });
 
   it("vegyes típusnál egy napon belül is keveredik a teszt és a kifejtős", () => {
