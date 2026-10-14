@@ -12,7 +12,7 @@ insert into app_users (user_id, role) values ('00000000-0000-0000-0000-000000000
 set local role authenticated;
 select _login('00000000-0000-0000-0000-0000000000d0');
 
-select _t((select count(*) from topics where not retired) = 29, 'az új lista 29 aktív témakör');
+select _t((select count(*) from topics where not retired) = 36, 'az új lista 36 aktív témakör');
 select _t((select string_agg(name, '|' order by sort_order) from (select name, sort_order from topics where not retired order by sort_order limit 2) x)
           = 'Abszolútérték, gyök|Egyenletek, egyenlőtlenségek, egyenletrendszerek', 'a sorrend a tanári lista szerinti');
 
