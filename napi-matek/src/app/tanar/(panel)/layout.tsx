@@ -10,6 +10,7 @@ const nav = [
   { href: "/tanar/tanulok", label: "Tanulók" },
   { href: "/tanar/feladatok", label: "Feladatbank" },
   { href: "/tanar/munkalapok", label: "Munkalapok" },
+  { href: "/tanar/biztatasok", label: "Biztató üzenetek" },
 ];
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {

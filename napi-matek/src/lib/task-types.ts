@@ -59,3 +59,14 @@ export function parseTaskType(input: string): TaskType | null {
   if (["kifejtos", "kifejto", "hosszu", "long"].includes(key)) return "kifejtos";
   return null;
 }
+
+/**
+ * A tesztfeladat válaszlehetőségeinek betűjelei a szövegből: „(A)”, „(B)”…
+ * Ha a szöveg nem tartalmaz ilyet, az A–D alapértelmezést adjuk.
+ */
+export function choiceLetters(body: string): string[] {
+  const found = new Set<string>();
+  for (const match of body.matchAll(/\(([A-F])\)/g)) found.add(match[1]!);
+  const letters = [...found].sort();
+  return letters.length >= 2 ? letters : ["A", "B", "C", "D"];
+}

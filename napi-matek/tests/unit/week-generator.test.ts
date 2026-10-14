@@ -85,3 +85,13 @@ describe("hétgenerátor", () => {
     expect(none.days).toEqual([]);
   });
 });
+
+import { choiceLetters } from "../../src/lib/task-types.ts";
+
+describe("teszt válaszlehetőségei", () => {
+  it("a szövegben szereplő betűjelek, különben A–D", () => {
+    expect(choiceLetters("?\n(A) 1\n(B) 2\n(C) 3")).toEqual(["A", "B", "C"]);
+    expect(choiceLetters("(E) x (A) y (D) z")).toEqual(["A", "D", "E"]);
+    expect(choiceLetters("nincs")).toEqual(["A", "B", "C", "D"]);
+  });
+});
