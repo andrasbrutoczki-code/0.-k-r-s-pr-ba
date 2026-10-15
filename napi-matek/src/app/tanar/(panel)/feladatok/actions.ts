@@ -21,6 +21,7 @@ const taskSchema = z.object({
   difficulty: z.coerce.number().int().min(1).max(5, "A nehézség 1 és 5 közötti."),
   requires_image: z.boolean(),
   task_type: z.enum(["teszt", "rovid", "kifejtos"], { message: "Válassz feladattípust." }),
+  level: z.enum(["erettsegi", "egyetem"], { message: "Válassz szintet." }),
   est_minutes: z.union([
     z.literal("").transform(() => null),
     z.coerce.number().int().min(1, "A becsült idő 1–120 perc.").max(120, "A becsült idő 1–120 perc."),
@@ -54,6 +55,7 @@ export async function saveTaskAction(_prev: SaveTaskState, formData: FormData): 
     difficulty: formData.get("difficulty"),
     requires_image: formData.get("requires_image") === "on",
     task_type: formData.get("task_type"),
+    level: formData.get("level") ?? "erettsegi",
     est_minutes: String(formData.get("est_minutes") ?? "").trim(),
     body_md: formData.get("body_md") ?? "",
     solution_md: formData.get("solution_md") ?? "",

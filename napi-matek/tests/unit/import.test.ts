@@ -43,6 +43,20 @@ describe("témakör-egyeztetés", () => {
     expect(matchTopic("ko", topics)).toBeNull(); // Koordinátageometria és Kombinatorika: nem egyértelmű
   });
 
+  it("szint: alapból érettségi, egyetem felismerve, ismeretlen hiba", () => {
+    const rows = parseJsonImport(
+      JSON.stringify([
+        { cim: "A", szoveg: "x", temakor: "egyenletek", nehezseg: 2 },
+        { cim: "B", szoveg: "x", temakor: "egyenletek", nehezseg: 2, szint: "Egyetemi" },
+        { cim: "C", szoveg: "x", temakor: "egyenletek", nehezseg: 2, szint: "óvoda" },
+      ]),
+      { topics },
+    );
+    expect(rows[0]!.row?.level).toBe("erettsegi");
+    expect(rows[1]!.row?.level).toBe("egyetem");
+    expect(rows[2]!.errors.length).toBe(1);
+  });
+
   it("több témakör: „|” vagy „;” jellel, JSON-tömbként; az első az elsődleges", () => {
     const rows = parseJsonImport(
       JSON.stringify([
@@ -170,6 +184,7 @@ describe("CSV import", () => {
       difficulty: 1,
       requires_image: false,
       task_type: "rovid",
+      level: "erettsegi",
     });
   });
 });

@@ -155,6 +155,7 @@ a hibás sorok kimaradnak, a hibátlanok egy tranzakcióban kerülnek be.
 | `tipus` | nem | `teszt`, `rovid` vagy `kifejtos`; ha hiányzik, a szövegből következtetjük |
 | `ido_perc` | nem | becsült megoldási idő (1–120 perc) |
 | `megoldasi_utmutato` | nem | csak a tanár látja |
+| `szint` | nem | `erettsegi` vagy `egyetem` (alapból érettségi) |
 | `helyes` | nem | tesztnél a helyes válasz betűje (A–F); hiányában az útmutató „Helyes válasz: (B)” kezdetéből |
 
 JSON: `{ "feladatok": [ { "cim": …, … } ] }` vagy egyszerű tömb. CSV: fejléc a

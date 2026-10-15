@@ -29,7 +29,7 @@ export default async function EditTaskPage({
   const [{ data: task }, { data: solution }, topics, { data: taskTopics }] = await Promise.all([
     supabase
       .from("tasks")
-      .select("id, title, body_md, difficulty, requires_image, figure_path, archived_at, topic_id, task_type, est_minutes")
+      .select("id, title, body_md, difficulty, requires_image, figure_path, archived_at, topic_id, task_type, est_minutes, level")
       .eq("id", id)
       .maybeSingle<TaskListItem>(),
     supabase
@@ -78,6 +78,7 @@ export default async function EditTaskPage({
           initial={{
             id: task.id,
             title: task.title,
+            level: task.level,
             // Az elsődleges témakör elöl, utána a többi a lista sorrendjében.
             topic_ids: [
               task.topic_id,

@@ -6,6 +6,7 @@ import { loadTopics, topicIdsOf, topicNames } from "@/lib/topics";
 import { MathText } from "@/components/math-text";
 import { Difficulty, Notice } from "@/components/ui";
 import { TASK_TYPES, TASK_TYPE_LABEL, estimateMinutes, type TaskType } from "@/lib/task-types";
+import { TASK_LEVELS, TASK_LEVEL_LABEL, type TaskLevel } from "@/lib/task-levels";
 
 export const metadata: Metadata = { title: "Feladatbank" };
 
@@ -18,6 +19,7 @@ type SearchParams = Promise<{
   tema?: string;
   nehezseg?: string;
   tipus?: string;
+  szint?: string;
   q?: string;
   archiv?: string;
   oldal?: string;
@@ -42,7 +44,7 @@ export default async function TaskBankPage({ searchParams }: { searchParams: Sea
   // Témakörszűrésnél a feladat bármelyik témaköre számít: a szűrő külön,
   // „inner” beágyazáson fut, hogy a megjelenített témakörlista teljes maradjon.
   const columns =
-    "id, title, body_md, difficulty, requires_image, figure_path, archived_at, topic_id, task_type, est_minutes, worksheet_items(count), task_topics(topic_id)";
+    "id, title, body_md, difficulty, requires_image, figure_path, archived_at, topic_id, task_type, est_minutes, level, worksheet_items(count), task_topics(topic_id)";
   let query = supabase
     .from("tasks")
     .select(topic ? `${columns}, szuro:task_topics!inner(topic_id)` : columns, { count: "exact" })
@@ -53,6 +55,7 @@ export default async function TaskBankPage({ searchParams }: { searchParams: Sea
   const difficulty = Number(params.nehezseg);
   if (Number.isInteger(difficulty) && difficulty >= 1 && difficulty <= 5) query = query.eq("difficulty", difficulty);
   if (TASK_TYPES.includes(params.tipus as TaskType)) query = query.eq("task_type", params.tipus!);
+  if (TASK_LEVELS.includes(params.szint as TaskLevel)) query = query.eq("level", params.szint!);
   if (params.q?.trim()) query = query.ilike("title", `%${params.q.trim().replace(/[%_]/g, "\\$&")}%`);
   query = showArchived ? query.not("archived_at", "is", null) : query.is("archived_at", null);
 
@@ -97,7 +100,7 @@ export default async function TaskBankPage({ searchParams }: { searchParams: Sea
         </div>
       </header>
 
-      <form className="grid gap-3 rounded-md border border-rule bg-sheet p-4 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_auto]" role="search">
+      <form className="grid gap-3 rounded-md border border-rule bg-sheet p-4 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto]" role="search">
         <label className="space-y-1">
           <span className="block text-sm font-bold">Keresés címben</span>
           <input
@@ -139,6 +142,17 @@ export default async function TaskBankPage({ searchParams }: { searchParams: Sea
             ))}
           </select>
         </label>
+        <label className="space-y-1">
+          <span className="block text-sm font-bold">Szint</span>
+          <select name="szint" defaultValue={params.szint ?? ""} className="block min-h-12 w-full rounded-md border border-rule bg-sheet px-3">
+            <option value="">Mind</option>
+            {TASK_LEVELS.map((l) => (
+              <option key={l} value={l}>
+                {TASK_LEVEL_LABEL[l]}
+              </option>
+            ))}
+          </select>
+        </label>
         {showArchived ? <input type="hidden" name="archiv" value="1" /> : null}
         <button className="min-h-12 self-end rounded-md bg-ink px-5 font-bold text-white">Szűrés</button>
       </form>
@@ -172,7 +186,12 @@ export default async function TaskBankPage({ searchParams }: { searchParams: Sea
                 >
                   {task.title}
                 </Link>
-                <Difficulty value={task.difficulty} />
+                <span className="flex items-center gap-2">
+                  {task.level === "egyetem" ? (
+                    <span className="rounded bg-ink-soft px-2 py-0.5 text-xs font-bold text-ink">Egyetem</span>
+                  ) : null}
+                  <Difficulty value={task.difficulty} />
+                </span>
               </div>
               <p className="mt-1 text-sm text-muted">
                 {topicNames(topicIdsOf(task.task_topics, topics), topicName) || "?"}, {TASK_TYPE_LABEL[task.task_type].toLowerCase()}, ~

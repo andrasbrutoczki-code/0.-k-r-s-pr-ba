@@ -78,6 +78,8 @@ export default async function ImportPage() {
           <dd>PNG fájlnév; csak ZIP-csomagban, a JSON/CSV mellé téve</dd>
           <dt className="font-bold">megoldasi_utmutato</dt>
           <dd>csak a tanár látja (nem kötelező)</dd>
+          <dt className="font-bold">szint</dt>
+          <dd>erettsegi vagy egyetem (ha hiányzik: érettségi)</dd>
           <dt className="font-bold">helyes</dt>
           <dd>
             tesztnél a helyes válasz betűje (A–F); ebből javítjuk automatikusan a tanuló választását. Ha hiányzik, az

@@ -24,6 +24,7 @@ export default async function NewTaskPage() {
           initial={{
             title: "",
             topic_ids: [],
+            level: "erettsegi",
             difficulty: 3,
             requires_image: true,
             task_type: "kifejtos",

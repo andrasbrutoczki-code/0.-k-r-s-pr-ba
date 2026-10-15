@@ -5,6 +5,7 @@ import { saveTaskAction, type SaveTaskState } from "./actions";
 import { MathText } from "@/components/math-text";
 import { Button, Field, Input, Notice, Textarea } from "@/components/ui";
 import type { Topic } from "@/lib/tasks";
+import { TASK_LEVELS, TASK_LEVEL_LABEL, type TaskLevel } from "@/lib/task-levels";
 import {
   TASK_TYPES,
   TASK_TYPE_LABEL,
@@ -17,6 +18,7 @@ import {
 export interface TaskEditorValues {
   id?: string;
   title: string;
+  level: TaskLevel;
   /** A feladat témakörei; az első az elsődleges. */
   topic_ids: number[];
   difficulty: number;
@@ -93,6 +95,7 @@ export function TaskEditor({
   const [difficulty, setDifficulty] = useState(initial.difficulty);
   const [requiresImage, setRequiresImage] = useState(initial.requires_image);
   const [taskType, setTaskType] = useState<TaskType>(initial.task_type);
+  const [level, setLevel] = useState<TaskLevel>(initial.level);
   const [minutes, setMinutes] = useState(initial.est_minutes ? String(initial.est_minutes) : "");
   const [body, setBody] = useState(initial.body_md);
   const [solution, setSolution] = useState(initial.solution_md);
@@ -181,6 +184,27 @@ export function TaskEditor({
                   className="sr-only"
                 />
                 {TASK_TYPE_LABEL[type]}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend className="mb-1.5 font-bold">Szint</legend>
+          <div className="flex gap-1">
+            {TASK_LEVELS.map((l) => (
+              <label
+                key={l}
+                className="flex h-12 cursor-pointer items-center rounded-md border border-rule bg-sheet px-3 font-bold has-[:checked]:border-ink has-[:checked]:bg-ink has-[:checked]:text-white"
+              >
+                <input
+                  type="radio"
+                  name="level"
+                  value={l}
+                  checked={level === l}
+                  onChange={() => setLevel(l)}
+                  className="sr-only"
+                />
+                {TASK_LEVEL_LABEL[l]}
               </label>
             ))}
           </div>

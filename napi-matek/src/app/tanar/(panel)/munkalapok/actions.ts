@@ -191,6 +191,7 @@ const generatorSchema = z.object({
   worksheetId: uuid,
   topicIds: z.array(z.number().int().positive()).min(1, "Válassz legalább egy témakört."),
   types: z.array(z.enum(["teszt", "rovid", "kifejtos"])).min(1, "Válassz legalább egy feladattípust."),
+  levels: z.array(z.enum(["erettsegi", "egyetem"])).min(1, "Válassz legalább egy szintet."),
   difficultyMin: z.number().int().min(1).max(5),
   difficultyMax: z.number().int().min(1).max(5),
   minutesPerDay: z.number().int().min(5).max(120),
@@ -215,10 +216,11 @@ export async function previewWeekAction(input: GeneratorInput): Promise<PreviewR
     return { ok: false, message: "A legkisebb nehézség nem lehet nagyobb a legnagyobbnál." };
   }
 
-  const { data, error } = await supabase.rpc("generator_pool", {
+  const { data, error } = await supabase.rpc("generator_pool_v2", {
     p_worksheet_id: opts.worksheetId,
     p_topic_ids: opts.topicIds,
     p_types: opts.types,
+    p_levels: opts.levels,
     p_difficulty_min: opts.difficultyMin,
     p_difficulty_max: opts.difficultyMax,
     p_only_unassigned: opts.onlyUnassigned,

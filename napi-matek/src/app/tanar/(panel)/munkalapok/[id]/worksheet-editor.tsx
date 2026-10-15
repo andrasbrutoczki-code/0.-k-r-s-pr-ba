@@ -19,6 +19,7 @@ import {
 import { Button, Difficulty, Field, Input, Notice, Select, Textarea } from "@/components/ui";
 import { PRACTICE_DAYS, formatDayWithWeekday, isoWeekday, scheduledDate } from "@/lib/schedule";
 import { TASK_TYPES, TASK_TYPE_LABEL, type TaskType } from "@/lib/task-types";
+import { TASK_LEVELS, TASK_LEVEL_LABEL, type TaskLevel } from "@/lib/task-levels";
 import type { WeekPlan } from "@/lib/week-generator";
 import { TaskPreview } from "./task-preview";
 
@@ -36,6 +37,7 @@ export interface PickerTask {
   difficulty: number;
   topicIds: number[];
   type: TaskType;
+  level: TaskLevel;
   minutes: number;
 }
 
@@ -281,6 +283,7 @@ export function TaskPicker({
   const [query, setQuery] = useState("");
   const [topicId, setTopicId] = useState("");
   const [type, setType] = useState("");
+  const [level, setLevel] = useState("");
   const [difficulty, setDifficulty] = useState("");
   const [limit, setLimit] = useState(PICKER_PAGE);
   const used = useMemo(() => new Set(usedTaskIds), [usedTaskIds]);
@@ -290,6 +293,7 @@ export function TaskPicker({
     (t) =>
       (!topicId || t.topicIds.includes(Number(topicId))) &&
       (!type || t.type === type) &&
+      (!level || t.level === level) &&
       (!difficulty || String(t.difficulty) === difficulty) &&
       (!query.trim() || t.title.toLowerCase().includes(query.trim().toLowerCase())),
   );
@@ -297,7 +301,7 @@ export function TaskPicker({
 
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr]">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr]">
         <Field label="Keresés" htmlFor="picker-q">
           <Input id="picker-q" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Feladat címe" />
         </Field>
@@ -317,6 +321,16 @@ export function TaskPicker({
             {TASK_TYPES.map((t) => (
               <option key={t} value={t}>
                 {TASK_TYPE_LABEL[t]}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Szint" htmlFor="picker-level">
+          <Select id="picker-level" value={level} onChange={(e) => setLevel(e.target.value)}>
+            <option value="">Mind</option>
+            {TASK_LEVELS.map((l) => (
+              <option key={l} value={l}>
+                {TASK_LEVEL_LABEL[l]}
               </option>
             ))}
           </Select>
@@ -530,6 +544,7 @@ export function WeekGenerator({
 }) {
   const [topicIds, setTopicIds] = useState<number[]>([]);
   const [types, setTypes] = useState<TaskType[]>(["teszt", "kifejtos"]);
+  const [levels, setLevels] = useState<TaskLevel[]>(["erettsegi"]);
   const [range, setRange] = useState({ min: 1, max: 3 });
   const [minutesPerDay, setMinutesPerDay] = useState(30);
   const [onlyUnassigned, setOnlyUnassigned] = useState(true);
@@ -548,6 +563,7 @@ export function WeekGenerator({
         worksheetId,
         topicIds,
         types,
+        levels,
         difficultyMin: range.min,
         difficultyMax: range.max,
         minutesPerDay,
@@ -621,6 +637,21 @@ export function WeekGenerator({
         </fieldset>
 
         <fieldset>
+          <legend className="mb-1.5 font-bold">Szint</legend>
+          <div className="flex gap-2">
+            {TASK_LEVELS.map((l) => (
+              <label
+                key={l}
+                className="flex min-h-12 cursor-pointer items-center gap-2 rounded-md border border-rule bg-sheet px-3 has-[:checked]:border-ink has-[:checked]:bg-ink-soft"
+              >
+                <input type="checkbox" checked={levels.includes(l)} onChange={() => setLevels(toggle(levels, l))} className="h-5 w-5" />
+                {TASK_LEVEL_LABEL[l]}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset>
           <legend className="mb-1.5 font-bold">Nehézség</legend>
           <div className="flex items-center gap-2">
             <Select
@@ -688,7 +719,7 @@ export function WeekGenerator({
         </label>
       </div>
 
-      <Button type="button" onClick={generate} disabled={pending || topicIds.length === 0 || types.length === 0}>
+      <Button type="button" onClick={generate} disabled={pending || topicIds.length === 0 || types.length === 0 || levels.length === 0}>
         {pending && !plan ? "Javaslat készül…" : plan ? "Új javaslat" : "Javaslat készítése"}
       </Button>
       {topicIds.length === 0 ? <p className="text-sm text-muted">Válassz legalább egy témakört.</p> : null}

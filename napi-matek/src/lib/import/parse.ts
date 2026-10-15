@@ -7,6 +7,7 @@ import {
   parseTaskType,
   type TaskType,
 } from "../task-types.ts";
+import { parseTaskLevel, type TaskLevel } from "../task-levels.ts";
 
 /**
  * Feladatok tömeges importja: JSON és CSV feldolgozása és soronkénti validálása.
@@ -22,6 +23,7 @@ import {
  *   ido_perc (becsült megoldási idő, 1–120; ha hiányzik, becsüljük),
  *   kep_kell (alapból: csak kifejtősnél igen),
  *   abra (PNG fájlnév, csak ZIP-ben), megoldasi_utmutato,
+ *   szint (erettsegi / egyetem; alapból érettségi),
  *   helyes (tesztnél a helyes válasz betűje; ha hiányzik, az útmutató
  *   „Helyes válasz: (B)” kezdetéből olvassuk ki)
  * A `pontszam` mezőt elfogadjuk, de figyelmen kívül hagyjuk (nincs pontozás).
@@ -49,6 +51,8 @@ export interface ImportRow {
   solution_md?: string;
   /** Tesztnél a helyes válasz betűje (A–F). */
   correct_choice?: string;
+  /** Szint; ha hiányzik, érettségi. */
+  level: TaskLevel;
 }
 
 export interface ParsedRow {
@@ -110,6 +114,8 @@ const FIELD_ALIASES: Record<string, keyof RawFields> = {
   megoldasbetu: "correct",
   correct: "correct",
   correctchoice: "correct",
+  szint: "level",
+  level: "level",
 };
 
 interface RawFields {
@@ -124,6 +130,7 @@ interface RawFields {
   type?: unknown;
   minutes?: unknown;
   correct?: unknown;
+  level?: unknown;
 }
 
 function mapFields(record: Record<string, unknown>): { fields: RawFields; unknown: string[] } {
@@ -282,6 +289,10 @@ export function validateRecord(
     warnings.push(`A helyes válasz („${correct}”) nem szerepel a válaszlehetőségek között.`);
   }
 
+  const levelText = asText(fields.level);
+  const level = levelText ? parseTaskLevel(levelText) : "erettsegi";
+  if (!level) errors.push(`Ismeretlen szint: „${levelText}” (erettsegi vagy egyetem).`);
+
   if (asText(fields.points)) warnings.push("A pontszámot nem használjuk, figyelmen kívül hagyjuk.");
   if (unknown.length) warnings.push(`Ismeretlen mező(k), kihagyva: ${unknown.join(", ")}.`);
   if (title && options.existingTitles?.has(normalizeKey(title))) {
@@ -294,6 +305,7 @@ export function validateRecord(
           title,
           body_md: body,
           topic_slugs: topicSlugs,
+          level: level ?? "erettsegi",
           difficulty,
           requires_image: requiresImage,
           task_type: taskType,

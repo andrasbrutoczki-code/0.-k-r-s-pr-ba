@@ -1,4 +1,5 @@
 import type { TaskType } from "./task-types";
+import type { TaskLevel } from "./task-levels";
 
 /**
  * Feladatbank: közös típusok és megjelenítési segédek.
@@ -21,6 +22,7 @@ export interface TaskListItem {
   topic_id: number;
   task_type: TaskType;
   est_minutes: number | null;
+  level: TaskLevel;
 }
 
 export type TaskStatus =

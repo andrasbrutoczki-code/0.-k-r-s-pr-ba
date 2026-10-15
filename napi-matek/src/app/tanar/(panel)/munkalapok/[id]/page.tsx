@@ -49,7 +49,7 @@ async function loadPickerTasks(supabase: Awaited<ReturnType<typeof requireTeache
   for (let from = 0; ; from += 1000) {
     const { data } = await supabase
       .from("tasks")
-      .select("id, title, difficulty, task_type, est_minutes, task_topics(topic_id)")
+      .select("id, title, difficulty, task_type, est_minutes, level, task_topics(topic_id)")
       .is("archived_at", null)
       .order("title")
       .order("id")
@@ -120,6 +120,7 @@ export default async function WorksheetPage({
     difficulty: number;
     task_type: TaskType;
     est_minutes: number | null;
+    level: "erettsegi" | "egyetem";
     task_topics: { topic_id: number }[];
   }[]).map((t) => ({
     id: t.id,
@@ -127,6 +128,7 @@ export default async function WorksheetPage({
     difficulty: t.difficulty,
     topicIds: topicIdsOf(t.task_topics, topics),
     type: t.task_type,
+    level: t.level,
     minutes: estimateMinutes(t.task_type, t.difficulty, t.est_minutes),
   }));
 
