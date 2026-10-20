@@ -53,16 +53,23 @@ export async function updateWorksheetAction(_prev: ActionResult | null, formData
   return { ok: true };
 }
 
-/** Csak kiosztás nélküli munkalap törölhető (a kiosztások idegen kulcsa is védi). */
-export async function deleteWorksheetAction(formData: FormData): Promise<void> {
+/**
+ * Munkalap törlése. Ha ki van osztva, előbb minden kiosztását visszavonja: az
+ * érintetlen feladatok törlődnek, a már megkezdett/beadott munka megmarad
+ * (a kiosztás a munkalap címével, munkalap nélkül él tovább).
+ */
+export async function deleteWorksheetAction(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
   const { supabase } = await requireTeacher();
   const id = uuid.safeParse(formData.get("id"));
-  if (!id.success) return;
-  const { error } = await supabase.from("worksheets").delete().eq("id", id.data);
-  if (!error) {
-    revalidatePath("/tanar/munkalapok");
-    redirect("/tanar/munkalapok");
-  }
+  if (!id.success) return { ok: false, message: "A munkalap nem található." };
+  const { data, error } = await supabase.rpc("delete_worksheet", { p_worksheet_id: id.data });
+  if (error || !data) return { ok: false, message: describeRpcError(error) };
+  const result = data as { removed: number; kept: number };
+  revalidatePath("/tanar/munkalapok");
+  revalidatePath("/tanar/kiosztasok");
+  revalidatePath("/tanar/ellenorzes");
+  const qs = new URLSearchParams({ torolve: "1", visszavonva: String(result.removed), megmaradt: String(result.kept) });
+  redirect(`/tanar/munkalapok?${qs.toString()}`);
 }
 
 export async function duplicateWorksheetAction(worksheetId: string, asTemplate: boolean): Promise<ActionResult> {

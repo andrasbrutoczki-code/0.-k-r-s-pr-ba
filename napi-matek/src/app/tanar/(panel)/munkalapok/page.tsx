@@ -40,8 +40,16 @@ function WorksheetList({ items, empty }: { items: WorksheetRow[]; empty: string 
   );
 }
 
-export default async function WorksheetsPage() {
+export default async function WorksheetsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { supabase } = await requireTeacher();
+  const sp = await searchParams;
+  const deleted = sp.torolve === "1";
+  const removed = Number(sp.visszavonva ?? 0) || 0;
+  const kept = Number(sp.megmaradt ?? 0) || 0;
   const { data, error } = await supabase
     .from("worksheets")
     .select("id, title, is_template, updated_at, worksheet_items(count), assignments(count)")
@@ -76,6 +84,13 @@ export default async function WorksheetsPage() {
         </form>
       </section>
 
+      {deleted ? (
+        <Notice tone="success">
+          Munkalap törölve.
+          {removed ? ` ${removed} még el nem kezdett feladat visszavonva.` : ""}
+          {kept ? ` ${kept} feladat megmaradt, mert már munka van benne.` : ""}
+        </Notice>
+      ) : null}
       {error ? <Notice tone="error">A munkalapok nem tölthetők be.</Notice> : null}
 
       <section className="space-y-3" aria-labelledby="ws-list-title">

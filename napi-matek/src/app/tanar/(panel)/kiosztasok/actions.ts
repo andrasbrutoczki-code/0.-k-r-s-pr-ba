@@ -82,7 +82,7 @@ export async function revokeAssignmentAction(_prev: RevokeResult, formData: Form
     .from("assignments")
     .select("worksheet_id")
     .eq("id", assignmentId.data)
-    .maybeSingle<{ worksheet_id: string }>();
+    .maybeSingle<{ worksheet_id: string | null }>();
   if (!assignment) return { status: "error", message: describeRpcError({ message: "assignment_not_found" }) };
 
   const { data, error } = await supabase.rpc("revoke_assignment", {
@@ -95,7 +95,7 @@ export async function revokeAssignmentAction(_prev: RevokeResult, formData: Form
 
   if (!studentId || result.assignment_deleted) {
     const qs = new URLSearchParams({ visszavonva: String(result.removed), megmaradt: String(result.kept) });
-    redirect(`/tanar/munkalapok/${assignment.worksheet_id}?${qs.toString()}`);
+    redirect(`/tanar/munkalapok${assignment.worksheet_id ? `/${assignment.worksheet_id}` : ""}?${qs.toString()}`);
   }
   return { status: "done", removed: result.removed, kept: result.kept, assignmentDeleted: result.assignment_deleted };
 }

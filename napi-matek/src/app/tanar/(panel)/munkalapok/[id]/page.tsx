@@ -5,8 +5,8 @@ import { requireTeacher } from "@/lib/auth/guards";
 import { formatDateOnly, nextMonday, todayInBudapest } from "@/lib/schedule";
 import { loadTopics, topicIdsOf, topicNames } from "@/lib/topics";
 import { estimateMinutes, type TaskType } from "@/lib/task-types";
-import { Button, Notice } from "@/components/ui";
-import { deleteWorksheetAction } from "../actions";
+import { Notice } from "@/components/ui";
+import { DeleteWorksheet } from "./delete-worksheet";
 import {
   AssignPanel,
   DuplicateButtons,
@@ -246,16 +246,7 @@ export default async function WorksheetPage({
         </h2>
         <WorksheetMetaForm id={worksheet.id} title={worksheet.title} description={worksheet.description ?? ""} />
         <DuplicateButtons worksheetId={worksheet.id} isTemplate={worksheet.is_template} />
-        {assignments.length === 0 ? (
-          <form action={deleteWorksheetAction}>
-            <input type="hidden" name="id" value={worksheet.id} />
-            <Button type="submit" variant="danger">
-              Munkalap törlése
-            </Button>
-          </form>
-        ) : (
-          <p className="text-sm text-muted">Kiosztott munkalap nem törölhető; a tanulók feladatai hivatkoznak rá.</p>
-        )}
+        <DeleteWorksheet worksheetId={worksheet.id} assignmentCount={assignments.length} />
       </section>
     </main>
   );

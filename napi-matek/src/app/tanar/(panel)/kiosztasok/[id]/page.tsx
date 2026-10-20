@@ -34,7 +34,7 @@ export default async function AssignmentPage({ params }: { params: Promise<{ id:
   const [assignmentRes, rowsRes, tasksRes] = await Promise.all([
     supabase
       .from("assignments")
-      .select("id, start_date, worksheet_id, worksheets(title)")
+      .select("id, start_date, worksheet_id, worksheet_title, worksheets(title)")
       .eq("id", id)
       .maybeSingle(),
     supabase
@@ -54,10 +54,14 @@ export default async function AssignmentPage({ params }: { params: Promise<{ id:
   const assignment = assignmentRes.data as unknown as {
     id: string;
     start_date: string;
-    worksheet_id: string;
+    worksheet_id: string | null;
+    worksheet_title: string | null;
     worksheets: { title: string } | null;
   } | null;
   if (!assignment) notFound();
+
+  const title = assignment.worksheets?.title ?? assignment.worksheet_title ?? "Munkalap";
+  const detached = !assignment.worksheet_id;
 
   const rows = (rowsRes.data ?? []) as unknown as StudentTaskRow[];
   const tasks = (tasksRes.data ?? []) as { id: string; title: string }[];
@@ -81,12 +85,18 @@ export default async function AssignmentPage({ params }: { params: Promise<{ id:
   return (
     <main className="space-y-8">
       <p>
-        <Link href={`/tanar/munkalapok/${assignment.worksheet_id}`} className="text-ink underline-offset-4 hover:underline">
-          ← {assignment.worksheets?.title ?? "Munkalap"}
+        <Link
+          href={detached ? "/tanar/munkalapok" : `/tanar/munkalapok/${assignment.worksheet_id}`}
+          className="text-ink underline-offset-4 hover:underline"
+        >
+          ← {detached ? "Munkalapok" : title}
         </Link>
       </p>
       <header className="space-y-1">
-        <h1 className="text-3xl font-bold">Kiosztás: {assignment.worksheets?.title}</h1>
+        <h1 className="text-3xl font-bold">Kiosztás: {title}</h1>
+        {detached ? (
+          <p className="text-sm text-muted">A munkalapot törölted; ez a kiosztás a már megkezdett munkák miatt maradt meg.</p>
+        ) : null}
         <p className="text-muted">
           Kezdőnap: {formatDateOnly(assignment.start_date)}. A tanulók mindig csak a mai és a korábbi napok
           feladatait látják.
@@ -98,12 +108,12 @@ export default async function AssignmentPage({ params }: { params: Promise<{ id:
           Kiosztás javítása
         </h2>
         <MoveAssignmentForm assignmentId={assignment.id} startDate={assignment.start_date} />
-        <AddStudentsForm assignmentId={assignment.id} students={missingStudents} />
+        {detached ? null : <AddStudentsForm assignmentId={assignment.id} students={missingStudents} />}
         <div className="space-y-2 border-t border-rule pt-4">
           <p className="font-bold">Visszavonás</p>
           <RevokeForm
             assignmentId={assignment.id}
-            worksheetId={assignment.worksheet_id}
+            worksheetId={assignment.worksheet_id ?? ""}
             label="Teljes kiosztás visszavonása"
           />
         </div>
@@ -115,7 +125,7 @@ export default async function AssignmentPage({ params }: { params: Promise<{ id:
             <h2 className="text-xl font-bold">{group.name}</h2>
             <RevokeForm
               assignmentId={assignment.id}
-              worksheetId={assignment.worksheet_id}
+              worksheetId={assignment.worksheet_id ?? ""}
               studentId={group.id}
               label="Visszavonás csak ennél a tanulónál"
             />
