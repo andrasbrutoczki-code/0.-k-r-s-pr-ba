@@ -67,12 +67,14 @@ export function ReviewPanel({
     });
   }
 
-  if (status === "not_started") {
-    return <p className="text-muted">A tanuló még nem adta be ezt a feladatot. Üzenetet így is küldhetsz neki.</p>;
-  }
+  // Beadás nélkül nincs mit elfogadni vagy javíttatni, de válaszolni lehet (pl. a tanuló kérdésére).
+  const notStarted = status === "not_started";
 
   return (
     <div className="space-y-3">
+      {notStarted ? (
+        <p className="text-muted">A tanuló még nem adta be ezt a feladatot. Üzenetet így is küldhetsz neki.</p>
+      ) : null}
       {ai ? (
         <AiPanel
           key={ai.initial?.id ?? "uj"}
@@ -87,7 +89,7 @@ export function ReviewPanel({
         />
       ) : null}
       <label htmlFor={fieldId} className="block font-bold">
-        Visszajelzés a tanulónak
+        {notStarted ? "Üzenet a tanulónak" : "Visszajelzés a tanulónak"}
       </label>
       <textarea
         id={fieldId}
@@ -106,7 +108,7 @@ export function ReviewPanel({
       ) : null}
 
       <div className="flex flex-wrap gap-2">
-        {status === "accepted" ? (
+        {notStarted ? null : status === "accepted" ? (
           <Button type="button" variant="secondary" disabled={pending} onClick={() => run(() => reopenAction(id), false)}>
             Visszanyitás
           </Button>
@@ -136,7 +138,7 @@ export function ReviewPanel({
           disabled={pending || !text.trim()}
           onClick={() => run(() => teacherMessageAction(id, text))}
         >
-          Csak üzenet küldése
+          {notStarted ? "Üzenet küldése" : "Csak üzenet küldése"}
         </Button>
         {nextId ? (
           <Link
@@ -150,10 +152,12 @@ export function ReviewPanel({
         )}
       </div>
       <p className="text-xs text-muted">
-        A döntés mellé írt szöveg is a tanuló üzenetszálába kerül, időbélyeggel.
+        {notStarted
+          ? "Az üzenet a feladat üzenetszálába kerül; a feladat állapota nem változik."
+          : "A döntés mellé írt szöveg is a tanuló üzenetszálába kerül, időbélyeggel."}
       </p>
       {result && !result.ok ? <Notice tone="error">{result.message}</Notice> : null}
-      {result?.ok ? <Notice tone="success">Elmentve.</Notice> : null}
+      {result?.ok ? <Notice tone="success">{notStarted ? "Üzenet elküldve." : "Elmentve."}</Notice> : null}
     </div>
   );
 }
